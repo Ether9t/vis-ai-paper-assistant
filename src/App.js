@@ -1,23 +1,24 @@
-import logo from './logo.svg';
+import React, { useState } from 'react';
+import Viewer from './components/viewer';
+import Chat from './components/chat';
 import './App.css';
 
 function App() {
+  const [pdfFile, setPdfFile] = useState(null);
+
+  const handleUpload = (file) => {
+    const fileUrl = URL.createObjectURL(file);
+    setPdfFile(fileUrl);
+  };
+
   return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.js</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
+    <div className="app-container">
+      <div className="left-panel">
+        <Viewer file={pdfFile} />
+      </div>
+      <div className="right-panel">
+        <Chat onUpload={handleUpload} />
+      </div>
     </div>
   );
 }
