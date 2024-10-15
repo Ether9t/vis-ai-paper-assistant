@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
 import { Document, Page, pdfjs } from 'react-pdf';
+import 'react-pdf/dist/esm/Page/AnnotationLayer.css';
+import 'react-pdf/dist/esm/Page/TextLayer.css';
 import './viewer.css';
 
 pdfjs.GlobalWorkerOptions.workerSrc = new URL(
@@ -32,12 +34,11 @@ const Viewer = ({ file }) => {
           {Array.from(new Array(numPages), (el, index) => (
             <div key={`page_${index + 1}`} className="pdf-page">
               <Page pageNumber={index + 1}/>
-              <div className="page-separator" />
             </div>
           ))}
         </Document>
       ) : (
-        <p>No PDF file uploaded</p>
+        <p className="no-pdf-message">No PDF file uploaded</p>
       )}
       {error && <p>{error}</p>}
     </div>

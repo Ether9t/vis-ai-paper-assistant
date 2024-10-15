@@ -28,23 +28,25 @@
     margin: 10px 0;
     padding: 10px 15px;
     border-radius: 20px;
-    max-width: 70%;
     word-wrap: break-word;
-  }
-  
-  .user-message {
+}
+
+.user-message {
     background-color: #bebebe;
     color: black;
     align-self: flex-end;
     margin-left: auto;
-  }
-  
-  .chatbot-message {
+    max-width: 50%;
+}
+
+.chatbot-message {
     background-color: #ffffff;
     color: black;
     align-self: flex-start;
     margin-right: auto;
-  }
+    max-width: 100%;
+}
+
   
   .input-container {
     display: flex;
@@ -76,7 +78,7 @@
   input[type="text"] {
     flex: 1;
     padding: 10px;
-    border: 1px solid #ccc;
+    border: 1px solid #bebebe;
     border-radius: 20px;
     font-size: 16px;
   }

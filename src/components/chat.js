@@ -52,7 +52,7 @@ function Chat({ onUpload }) {
           type="text"
           value={input}
           onChange={(e) => setInput(e.target.value)}
-          placeholder="Type your message..."
+          placeholder="Send your message to chat bot..."
           onKeyDown={(e) => e.key === 'Enter' && sendMessage()}
         />
         <button onClick={sendMessage} className="send-button">
