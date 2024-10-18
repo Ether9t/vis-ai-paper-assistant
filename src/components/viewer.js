@@ -9,14 +9,25 @@ pdfjs.GlobalWorkerOptions.workerSrc = new URL(
   import.meta.url,
 ).toString();
 
-const Viewer = ({ file }) => {
+const Viewer = ({ file, setTextContent }) => {
   const [numPages, setNumPages] = useState(null);
   const [error, setError] = useState(null);
 
-  const onDocumentLoadSuccess = ({ numPages }) => {
+  const onDocumentLoadSuccess = async ({ numPages }) => {
     setNumPages(numPages);
     setError(null);
-    console.log(`Document loaded successfully with ${numPages} pages.`);
+    // console.log(`Document loaded successfully with ${numPages} pages.`);
+
+    const extractedText = [];
+    const pdf = await pdfjs.getDocument(file).promise;
+    for (let pageNumber = 1; pageNumber <= numPages; pageNumber++) {
+      const page = await pdf.getPage(pageNumber);
+      const textContent = await page.getTextContent();
+      const textItems = textContent.items.map(item => item.str).join(' ');
+      extractedText.push(textItems);
+    }
+    setTextContent(extractedText);
+    // console.log(extractedText);
   };
 
   const onDocumentLoadError = (err) => {
@@ -26,17 +37,19 @@ const Viewer = ({ file }) => {
   return (
     <div className="pdf-viewer">
       {file ? (
-        <Document
-          file={file}
-          onLoadSuccess={onDocumentLoadSuccess}
-          onLoadError={onDocumentLoadError}
-        >
-          {Array.from(new Array(numPages), (el, index) => (
-            <div key={`page_${index + 1}`} className="pdf-page">
-              <Page pageNumber={index + 1}/>
-            </div>
-          ))}
-        </Document>
+        <>
+          <Document
+            file={file}
+            onLoadSuccess={onDocumentLoadSuccess}
+            onLoadError={onDocumentLoadError}
+          >
+            {Array.from(new Array(numPages), (el, index) => (
+              <div key={`page_${index + 1}`} className="pdf-page">
+                <Page pageNumber={index + 1} />
+              </div>
+            ))}
+          </Document>
+        </>
       ) : (
         <p className="no-pdf-message">No PDF file uploaded</p>
       )}
