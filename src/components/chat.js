@@ -15,7 +15,7 @@ function Chat({ onUpload, textContent }) {
                 "https://api-inference.huggingface.co/models/sshleifer/distilbart-cnn-12-6",
                 {
                     headers: {
-                        Authorization: "Bearer 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",
+                        Authorization: "Bearer YOUR_HF_KEY",
                         "Content-Type": "application/json",
                     },
                     method: "POST",
@@ -60,7 +60,7 @@ function Chat({ onUpload, textContent }) {
                 },
                 {
                     headers: {
-                        Authorization: `Bearer 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`,
+                        Authorization: `Bearer YOUR_HF_KEY`,
                         'Content-Type': 'application/json',
                     },
                 }
