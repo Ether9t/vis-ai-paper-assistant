@@ -16,20 +16,26 @@ const Viewer = ({ file, setTextContent }) => {
   const onDocumentLoadSuccess = async ({ numPages }) => {
     setNumPages(numPages);
     setError(null);
-    // console.log(`Document loaded successfully with ${numPages} pages.`);
-
+  
     const extractedText = [];
     const pdf = await pdfjs.getDocument(file).promise;
     for (let pageNumber = 1; pageNumber <= numPages; pageNumber++) {
       const page = await pdf.getPage(pageNumber);
       const textContent = await page.getTextContent();
       const textItems = textContent.items.map(item => item.str).join(' ');
-      extractedText.push(textItems);
+      const cleanedText = textItems.replace(/\s+/g, ' ').trim();
+  
+      extractedText.push(cleanedText);
     }
-    setTextContent(extractedText);
-    // console.log(extractedText);
-  };
 
+    const fullText = extractedText.join(' ');
+
+    const referenceIndex = fullText.indexOf('R EFERENCES');
+    const finalText = referenceIndex !== -1 ? fullText.slice(0, referenceIndex) : fullText;
+  
+    setTextContent(finalText);
+  };
+  
   const onDocumentLoadError = (err) => {
     setError('Failed to load PDF file.');
   };

@@ -48,7 +48,7 @@ function Chat({ onUpload, textContent }) {
         summarize();
     }, [textContent, summarizeText, summaryGenerated]);
 
-    const askQuestion = async (question, context) => {
+    const chatWithbot = async (question, context) => {
         try {
             const response = await axios.post(
                 'https://api-inference.huggingface.co/models/deepset/roberta-base-squad2',
@@ -94,9 +94,8 @@ function Chat({ onUpload, textContent }) {
             setMessages([...messages, { sender: 'user', text: input }]);
             setInput('');
 
-            // 只有在摘要已生成的情况下进行问答
             if (summaryGenerated) {
-                const botReply = await askQuestion(input, textContent.join(' '));
+                const botReply = await chatWithbot(input, textContent);
                 setMessages(prevMessages => [...prevMessages, { sender: 'chatbot', text: botReply }]);
             } else {
                 setMessages(prevMessages => [...prevMessages, { sender: 'chatbot', text: "Please upload a document first to generate a summary." }]);
