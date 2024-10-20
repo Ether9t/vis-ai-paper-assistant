@@ -21,4 +21,39 @@
     text-align: center;
     margin: 250px 0;
   }
+  .fixed-controls {
+    position: fixed;
+    top: 0; /* 固定在页面顶部 */
+    left: 0; /* 固定在页面的左侧 */
+    width: 50%; /* 占据左半部分 */
+    background-color: #f4f4f4; /* 背景色与工具栏一致 */
+    padding: 10px;
+    border-bottom: 1px solid #ccc; /* 添加下边框以与内容分隔 */
+    box-shadow: 0px 2px 5px rgba(0, 0, 0, 0.1);
+    z-index: 1000; /* 确保在页面内容之上 */
+    display: flex;
+    align-items: center;
+    justify-content: center; /* 水平居中 */
+    gap: 10px;
+  }
+  
+  .controls input {
+    width: 50px;
+    text-align: center;
+  }
+  
+  .controls button {
+    width: 40px;
+    height: 30px;
+    font-size: 18px;
+  }
+  
+  .controls span {
+    font-size: 16px;
+  }
+  
+  .pdf-viewer {
+    margin-top: 60px; /* 给内容与控制面板留出足够的空间 */
+    padding-left: 15px; /* 确保内容不与控制面板重叠 */
+  }
   
