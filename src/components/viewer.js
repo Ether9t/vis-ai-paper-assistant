@@ -34,14 +34,14 @@ const Viewer = ({ file, setTextContent }) => {
     };
 
     const observer = new IntersectionObserver(callback, options);
-
+    const pages = pageRefs.current
     pageRefs.current.forEach((page) => {
       if (page) observer.observe(page);
     });
 
     return () => {
       if (observer) {
-        pageRefs.current.forEach((page) => {
+        pages.forEach((page) => {
           if (page) observer.unobserve(page);
         });
       }

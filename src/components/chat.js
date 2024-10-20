@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import './chat.css';
 import axios from 'axios';
+import { extractTextWithPositions } from '../util/pdfExtractor';
 
 function Chat({ onUpload, textContent }) {
     const [messages, setMessages] = useState([]);
@@ -76,6 +77,8 @@ function Chat({ onUpload, textContent }) {
     const handleFileUpload = async (event) => {
         const uploadedFile = event.target.files[0];
         if (uploadedFile && uploadedFile.type === 'application/pdf') {
+            const extractedTextData = await extractTextWithPositions(uploadedFile);
+            console.log('Extracted Text Data:', extractedTextData);
             onUpload(uploadedFile);
             setMessages([...messages, { sender: 'user', text: `File: ${uploadedFile.name}` }]);
 
