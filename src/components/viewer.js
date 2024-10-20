@@ -34,7 +34,7 @@ const Viewer = ({ file, setTextContent }) => {
     };
 
     const observer = new IntersectionObserver(callback, options);
-    const pages = pageRefs.current
+    const pages = pageRefs.current;
     pageRefs.current.forEach((page) => {
       if (page) observer.observe(page);
     });
@@ -48,7 +48,6 @@ const Viewer = ({ file, setTextContent }) => {
     };
   }, [numPages]);
 
-  // 同步更新输入框的值，当currentPage变化时
   useEffect(() => {
     setPageInputValue(currentPage.toString());
   }, [currentPage]);
@@ -57,7 +56,6 @@ const Viewer = ({ file, setTextContent }) => {
     setNumPages(numPages);
     setError(null);
 
-    // 提取文本内容的代码（保持不变）
     const extractedText = [];
     const pdf = await pdfjs.getDocument(file).promise;
     for (let pageNumber = 1; pageNumber <= numPages; pageNumber++) {
@@ -82,7 +80,6 @@ const Viewer = ({ file, setTextContent }) => {
     setError('Failed to load PDF file.');
   };
 
-  // 缩放控制函数
   const handleZoomIn = () => {
     setScale((prevScale) => Math.min(prevScale + 0.2, 3));
   };
@@ -91,19 +88,16 @@ const Viewer = ({ file, setTextContent }) => {
     setScale((prevScale) => Math.max(prevScale - 0.2, 0.5));
   };
 
-  // 当用户按下回车键时，更新当前页码
   const handlePageInputKeyDown = (e) => {
     if (e.key === 'Enter') {
       updateCurrentPage();
     }
   };
 
-  // 当输入框失去焦点时，更新当前页码
   const handlePageInputBlur = () => {
     updateCurrentPage();
   };
 
-  // 更新当前页码并跳转
   const updateCurrentPage = () => {
     const pageNumber = parseInt(pageInputValue, 10);
     if (!isNaN(pageNumber)) {
@@ -114,7 +108,6 @@ const Viewer = ({ file, setTextContent }) => {
         pageElement.scrollIntoView({ behavior: 'smooth' });
       }
     } else {
-      // 如果输入无效，重置为当前页码
       setPageInputValue(currentPage.toString());
     }
   };
@@ -122,7 +115,6 @@ const Viewer = ({ file, setTextContent }) => {
   return (
     <div className="pdf-viewer-container">
       <div className="controls fixed-controls">
-        {/* 页数输入和导航 */}
         <span>Page</span>
         <input
           type="number"
@@ -136,31 +128,35 @@ const Viewer = ({ file, setTextContent }) => {
         <span>/ {numPages}</span>
         <span>&nbsp;|&nbsp;</span>
 
-        {/* 缩放控制 */}
         <span>Zoom</span>
         <button onClick={handleZoomOut}>-</button>
         <span>{Math.round(scale * 100)}%</span>
         <button onClick={handleZoomIn}>+</button>
       </div>
 
-      {/* 文档查看 */}
       <div className="pdf-viewer">
-        <Document
-          file={file}
-          onLoadSuccess={onDocumentLoadSuccess}
-          onLoadError={onDocumentLoadError}
-        >
-          {Array.from(new Array(numPages), (el, index) => (
-            <div
-              key={`page_${index + 1}`}
-              className="pdf-page"
-              data-page-number={index + 1}
-              ref={(el) => (pageRefs.current[index] = el)}
-            >
-              <Page pageNumber={index + 1} scale={scale} />
-            </div>
-          ))}
-        </Document>
+        {/* 只有当 file 存在时才渲染 Document 组件，这个用来显示自定义的未上传pdf的提醒 */}
+        {file ? (
+          <Document
+            file={file}
+            onLoadSuccess={onDocumentLoadSuccess}
+            onLoadError={onDocumentLoadError}
+          >
+            {numPages &&
+              Array.from(new Array(numPages), (el, index) => (
+                <div
+                  key={`page_${index + 1}`}
+                  className="pdf-page"
+                  data-page-number={index + 1}
+                  ref={(el) => (pageRefs.current[index] = el)}
+                >
+                  <Page pageNumber={index + 1} scale={scale} />
+                </div>
+              ))}
+          </Document>
+        ) : (
+          <p className="no-pdf-message">No PDF file uploaded</p>
+        )}
       </div>
       {error && <p>{error}</p>}
     </div>

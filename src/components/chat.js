@@ -10,13 +10,13 @@ function Chat({ onUpload, textContent }) {
     const [summaryGenerated, setSummaryGenerated] = useState(false);
 
     const summarizeText = useCallback(async (text) => {
-        // console.log("Text to summarize:", text);
+        // console.log("Text to summarize:", text); // 查看文档是否提取成功，ctrl + shift + i开启控制台
         try {
             const response = await fetch(
                 "https://api-inference.huggingface.co/models/sshleifer/distilbart-cnn-12-6",
                 {
                     headers: {
-                        Authorization: "Bearer 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",
+                        Authorization: "Bearer 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", // 这里换成自己的KEY
                         "Content-Type": "application/json",
                     },
                     method: "POST",
@@ -61,7 +61,7 @@ function Chat({ onUpload, textContent }) {
                 },
                 {
                     headers: {
-                        Authorization: `Bearer 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`,
+                        Authorization: `Bearer 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`, // 这里换成自己的KEY
                         'Content-Type': 'application/json',
                     },
                 }
