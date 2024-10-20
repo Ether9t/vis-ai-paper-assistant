@@ -114,25 +114,27 @@ const Viewer = ({ file, setTextContent }) => {
 
   return (
     <div className="pdf-viewer-container">
-      <div className="controls fixed-controls">
-        <span>Page</span>
-        <input
-          type="number"
-          value={pageInputValue}
-          onChange={(e) => setPageInputValue(e.target.value)}
-          onKeyDown={handlePageInputKeyDown}
-          onBlur={handlePageInputBlur}
-          min="1"
-          max={numPages}
-        />
-        <span>/ {numPages}</span>
-        <span>&nbsp;|&nbsp;</span>
+      {file &&(
+        <div className="controls fixed-controls">
+          {/* <span>Page</span> */}
+          <input
+            type="number"
+            value={pageInputValue}
+            onChange={(e) => setPageInputValue(e.target.value)}
+            onKeyDown={handlePageInputKeyDown}
+            onBlur={handlePageInputBlur}
+            min="1"
+            max={numPages}
+          />
+          <span>/ {numPages}</span>
+          <span className="light-text">&nbsp;|&nbsp;</span>
 
-        <span>Zoom</span>
-        <button onClick={handleZoomOut}>-</button>
-        <span>{Math.round(scale * 100)}%</span>
-        <button onClick={handleZoomIn}>+</button>
-      </div>
+          {/* <span>Zoom</span> */}
+          <button onClick={handleZoomOut}>-</button>
+          {/* <span>{Math.round(scale * 100)}%</span> */}
+          <button onClick={handleZoomIn}>+</button>
+        </div>
+      )}
 
       <div className="pdf-viewer">
         {/* 只有当 file 存在时才渲染 Document 组件，这个用来显示自定义的未上传pdf的提醒 */}
