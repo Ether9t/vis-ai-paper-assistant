@@ -10,7 +10,7 @@ function App() {
     setPdfFile(fileUrl);
   };
   const [textContent, setTextContent] = useState([]);
-  // console.log("Current textContent:", textContent);
+  // console.log("textContent:", textContent);
 
   return (
     <div className="app-container">
