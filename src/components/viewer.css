@@ -79,3 +79,7 @@
   margin-top: 60px;
   padding-left: 15px;
 }
+
+.pdf-page .highlighted {
+  background-color: yellow;
+}

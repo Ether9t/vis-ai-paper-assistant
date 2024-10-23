@@ -1,22 +1,29 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import './chat.css';
 import axios from 'axios';
-import { extractTextWithPositions } from '../util/pdfExtractor';
 
-function Chat({ onUpload, textContent }) {
+function Chat({ onUpload, textContent, setHighlightedText }) {
     const [messages, setMessages] = useState([]);
     const [input, setInput] = useState('');
     const messageEndRef = useRef(null);
     const [summaryGenerated, setSummaryGenerated] = useState(false);
+    const [selectedSentence, setSelectedSentence] = useState(null);
+
+    const handleMouseEnter = (text) => {
+        setHighlightedText(text);
+    };
+
+    const handleMouseLeave = () => {
+        setHighlightedText(null);
+    };
 
     const summarizeText = useCallback(async (text) => {
-        // console.log("Text to summarize:", text); // 查看文档是否提取成功，ctrl + shift + i开启控制台
         try {
             const response = await fetch(
                 "https://api-inference.huggingface.co/models/sshleifer/distilbart-cnn-12-6",
                 {
                     headers: {
-                        Authorization: "Bearer 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", // 这里换成自己的KEY
+                        Authorization: "Bearer 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",
                         "Content-Type": "application/json",
                     },
                     method: "POST",
@@ -61,12 +68,11 @@ function Chat({ onUpload, textContent }) {
                 },
                 {
                     headers: {
-                        Authorization: `Bearer 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`, // 这里换成自己的KEY
+                        Authorization: `Bearer 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`,
                         'Content-Type': 'application/json',
                     },
                 }
             );
-            console.log("Response data:", response.data);
             return response.data.answer;
         } catch (error) {
             console.error("Error answering the question:", error);
@@ -77,10 +83,8 @@ function Chat({ onUpload, textContent }) {
     const handleFileUpload = async (event) => {
         const uploadedFile = event.target.files[0];
         if (uploadedFile && uploadedFile.type === 'application/pdf') {
-            const extractedTextData = await extractTextWithPositions(uploadedFile);
-            console.log('Extracted Text Data:', extractedTextData);
             onUpload(uploadedFile);
-            setMessages([...messages, { sender: 'user', text: `File: ${uploadedFile.name}` }]);
+            setMessages([...messages, { sender: 'user', text: `Uploaded ${uploadedFile.name}` }]);
 
             if (!summaryGenerated && textContent.length > 0) {
                 const summary = await summarizeText(textContent);
@@ -106,12 +110,34 @@ function Chat({ onUpload, textContent }) {
         }
     };
 
+    const toggleSentenceSelection = (sentence) => {
+        setSelectedSentence(selectedSentence === sentence ? null : sentence);
+        setHighlightedText(selectedSentence === sentence ? null : sentence);
+    };
+
+    const splitIntoSentences = (text) => {
+        return text.split(/(?<=[.!?])\s+/);
+    };
+
     return (
         <div className="chat-container">
             <div className="message-display">
-                {messages.map((msg, index) => (
-                    <div key={index} className={`message ${msg.sender === 'user' ? 'user-message' : 'chatbot-message'}`}>
-                        {msg.text}
+                {messages.map((msg, msgIndex) => (
+                    <div 
+                        key={msgIndex}
+                        className={`message ${msg.sender === 'user' ? 'user-message' : 'chatbot-message'}`}>
+                        {msg.sender === 'chatbot' && splitIntoSentences(msg.text).map((sentence, i) => (
+                            <span
+                                key={`${msgIndex}-${i}`}
+                                onMouseEnter={() => handleMouseEnter(sentence)}
+                                onMouseLeave={handleMouseLeave}
+                                onClick={() => toggleSentenceSelection(sentence)}
+                                className={`summary-sentence ${selectedSentence === sentence ? 'selected' : ''}`}
+                            >
+                                {sentence + ' '}
+                            </span>
+                        ))}
+                        {msg.sender === 'user' && <span>{msg.text}</span>}
                     </div>
                 ))}
                 <div ref={messageEndRef} />
