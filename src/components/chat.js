@@ -1,6 +1,9 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import './chat.css';
-import axios from 'axios';
+const { GoogleGenerativeAI } = require("@google/generative-ai");
+const genAI = new GoogleGenerativeAI('AIzaSyCj6783aYaHpyFHvBQAOJFRN0LRkA7dhvM');
+const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+
 
 function Chat({ onUpload, textContent, setHighlightedText }) {
     const [messages, setMessages] = useState([]);
@@ -19,31 +22,21 @@ function Chat({ onUpload, textContent, setHighlightedText }) {
 
     const summarizeText = useCallback(async (text) => {
         try {
-            const response = await fetch(
-                "https://api-inference.huggingface.co/models/sshleifer/distilbart-cnn-12-6",
-                {
-                    headers: {
-                        Authorization: "Bearer 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",
-                        "Content-Type": "application/json",
-                    },
-                    method: "POST",
-                    body: JSON.stringify({ inputs: text }),
-                }
-            );
-
-            if (!response.ok) {
-                const errorData = await response.json();
-                throw new Error(errorData.error || 'Failed to summarize text.');
+            const prompt = 
+            `Please summarize the key points of the following paper in a hierarchical structure format for easy conversion to a tree diagram: ${text}`;
+            const result = await model.generateContent(prompt);
+    
+            if (!result || !result.response) {
+                throw new Error('Failed to summarize text.');
             }
-
-            const result = await response.json();
-            return result[0].summary_text;
+    
+            return result.response.text();
         } catch (error) {
             console.error("Error summarizing the text:", error);
             return "Sorry, there was an error summarizing the document.";
         }
     }, []);
-
+    
     useEffect(() => {
         const summarize = async () => {
             if (textContent.length > 0 && !summaryGenerated) {
@@ -52,28 +45,20 @@ function Chat({ onUpload, textContent, setHighlightedText }) {
                 setSummaryGenerated(true);
             }
         };
-
+    
         summarize();
     }, [textContent, summarizeText, summaryGenerated]);
 
     const chatWithbot = async (question, context) => {
         try {
-            const response = await axios.post(
-                'https://api-inference.huggingface.co/models/deepset/roberta-base-squad2',
-                {
-                    inputs: {
-                        question: question,
-                        context: context,
-                    },
-                },
-                {
-                    headers: {
-                        Authorization: `Bearer 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`,
-                        'Content-Type': 'application/json',
-                    },
-                }
-            );
-            return response.data.answer;
+            const prompt = `Answer the question based on the paper.\nContext: ${context}\nQuestion: ${question}`;
+            const result = await model.generateContent(prompt);
+    
+            if (!result || !result.response) {
+                throw new Error('Failed to generate an answer.');
+            }
+    
+            return result.response.text();
         } catch (error) {
             console.error("Error answering the question:", error);
             return "Sorry, I couldn't answer the question.";
