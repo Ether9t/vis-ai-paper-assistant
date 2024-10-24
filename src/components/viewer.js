@@ -16,6 +16,7 @@ const Viewer = ({ file, setTextContent, highlightedText }) => {
   const [error, setError] = useState(null);
   const [scale, setScale] = useState(1.0);
   const pageRefs = useRef([]);
+  // console.log("highlightedText:", highlightedText); // 检查chat部分中高亮的文本是否传递成功
 
   useEffect(() => {
     const options = {
@@ -74,6 +75,7 @@ const Viewer = ({ file, setTextContent, highlightedText }) => {
       referenceIndex !== -1 ? fullText.slice(0, referenceIndex) : fullText;
 
     setTextContent(finalText);
+    setCurrentPage(1);
   };
 
   const onDocumentLoadError = (err) => {
@@ -112,6 +114,36 @@ const Viewer = ({ file, setTextContent, highlightedText }) => {
     }
   };
 
+  const highlightText = (highlightedText, finalText) => {
+    const fullTextTokens = finalText.split(/\s+/);
+    const highlightedTokens = highlightedText.split(/\s+/);
+
+    const highlightedSentence = highlightedTokens.map((word, index) => {
+      let className = '';
+
+      if (fullTextTokens.includes(word)) {
+        className = `ngram`;
+      }
+
+      if (!fullTextTokens.includes(word)) {
+        className = 'new-word';
+      }
+
+      if (/^[A-Z]/.test(word)) {
+        className = 'new-entity';
+      }
+
+      return (
+        <span key={index} className={className}>
+          {word}{' '}
+        </span>
+      );
+    });
+
+    return highlightedSentence;
+  };
+
+
   return (
     <div className="pdf-viewer-container">
       {file &&(
@@ -128,7 +160,6 @@ const Viewer = ({ file, setTextContent, highlightedText }) => {
           />
           <span>/ {numPages}</span>
           <span className="light-text">&nbsp;|&nbsp;</span>
-
           {/* <span>Zoom</span> */}
           <button onClick={handleZoomOut}>-</button>
           {/* <span>{Math.round(scale * 100)}%</span> */}
@@ -160,6 +191,13 @@ const Viewer = ({ file, setTextContent, highlightedText }) => {
           <p className="no-pdf-message">No PDF file uploaded</p>
         )}
       </div>
+      {highlightedText && (
+        <div className="highlighted-text-container">
+          <div className="highlighted-summary">
+            {highlightText(highlightedText, file ? file : '')}
+          </div>
+        </div>
+      )}
       {error && <p>{error}</p>}
     </div>
   );

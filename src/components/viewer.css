@@ -80,6 +80,8 @@
   padding-left: 15px;
 }
 
-.pdf-page .highlighted {
-  background-color: yellow;
-}
+.ngram { text-decoration: underline; text-decoration-color: blue; }
+
+.new-word { font-weight: bold; }
+
+.new-entity { color: red; }
