@@ -151,26 +151,32 @@ function Chat({ onUpload, textContent, setHighlightedText }) {
             </div>
 
             <div className="message-display">
-                {messages.map((msg, msgIndex) => (
-                    <div 
-                        key={msgIndex}
-                        className={`message ${msg.sender === 'user' ? 'user-message' : 'chatbot-message'}`}>
-                        {msg.sender === 'chatbot' && splitIntoSentences(msg.text).map((sentence, i) => (
-                            <span
-                                key={`${msgIndex}-${i}`}
-                                onMouseEnter={() => handleMouseEnter(sentence)}
-                                onMouseLeave={handleMouseLeave}
-                                onClick={() => toggleSentenceSelection(sentence)}
-                                className={`summary-sentence ${selectedSentence === sentence ? 'selected' : ''}`}
-                            >
-                                {sentence + ' '}
-                            </span>
-                        ))}
-                        {msg.sender === 'user' && <span>{msg.text}</span>}
-                    </div>
-                ))}
-                <div ref={messageEndRef} />
-            </div>
+    {messages.map((msg, msgIndex) => (
+        <div 
+            key={msgIndex}
+            className={`message ${msg.sender === 'user' ? 'user-message' : 'chatbot-message'}`}>
+
+            {msg.sender === 'chatbot' && msg.text === "Tree chart generated. Please click the icon to check the results. Feel free to ask me questions!" ? (
+                <span>{msg.text}</span>
+            ) : (
+                splitIntoSentences(msg.text).map((sentence, i) => (
+                    <span
+                        key={`${msgIndex}-${i}`}
+                        onMouseEnter={() => handleMouseEnter(sentence)}
+                        onMouseLeave={handleMouseLeave}
+                        onClick={() => toggleSentenceSelection(sentence)}
+                        className={`summary-sentence ${selectedSentence === sentence ? 'selected' : ''}`}
+                    >
+                        {sentence + ' '}
+                    </span>
+                ))
+            )}
+
+            {msg.sender === 'user' && <span>{msg.text}</span>}
+        </div>
+    ))}
+    <div ref={messageEndRef} />
+</div>
             {isTreeVisible && treeData && (
     <div className="floating-tree" style={{ padding: '0px', background: '#f9f9f9', borderRadius: '8px', boxShadow: '0 4px 8px rgba(0,0,0,0.1)' }}>
         {/* <button className="close-tree-button" onClick={toggleTreeVisibility} style={{ background: 'transparent', border: 'none', fontSize: '16px', cursor: 'pointer' }}>X</button> */}
