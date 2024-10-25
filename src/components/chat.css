@@ -113,3 +113,58 @@
   background-color: #00b7ff97;
   cursor: pointer;
 }
+
+.tree-toggle-icon {
+  position: absolute;
+  top: 20px;
+  left: 675px;
+  cursor: pointer;
+  font-size: 24px;
+  color: #333;
+  width: 50px;
+  height: 50px;
+  background-color: #ffffff;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.floating-tree {
+  position: fixed;
+  top: 10%;
+  transform: translateX(-50%);
+  width: 85%;
+  height: 85%;
+  background-color: rgba(255, 255, 255, 0.95);
+  z-index: 1000;
+  overflow: auto;
+  padding: 20px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  overflow: hidden;
+}
+
+.tree-svg {
+  overflow: visible;
+}
+
+.tree-node {
+  max-width: 150px; /* 设置节点的最大宽度 */
+  word-wrap: break-word; /* 允许长单词换行 */
+  overflow-wrap: break-word; /* 兼容性更好 */
+  white-space: normal; /* 允许换行 */
+  padding: 5px; /* 为文本添加内边距 */
+  text-align: center; /* 文本居中 */
+}
+
+.close-tree-button {
+  position: absolute; /* 绝对定位 */
+  top: 10px; /* 距离顶部 */
+  right: 20px; /* 距离右边 */
+  background: transparent; /* 透明背景 */
+  border: none; /* 无边框 */
+  font-size: 24px; /* 字体大小 */
+  cursor: pointer; /* 鼠标悬停时显示为可点击 */
+}
+

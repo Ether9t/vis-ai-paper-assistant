@@ -1,9 +1,12 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import './chat.css';
+import Tree from "react-d3-tree";
+import { jsonrepair } from 'jsonrepair';
+import 'react-tree-graph/dist/style.css';
+
 const { GoogleGenerativeAI } = require("@google/generative-ai");
 const genAI = new GoogleGenerativeAI('AIzaSyCj6783aYaHpyFHvBQAOJFRN0LRkA7dhvM');
 const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
-
 
 function Chat({ onUpload, textContent, setHighlightedText }) {
     const [messages, setMessages] = useState([]);
@@ -11,6 +14,12 @@ function Chat({ onUpload, textContent, setHighlightedText }) {
     const messageEndRef = useRef(null);
     const [summaryGenerated, setSummaryGenerated] = useState(false);
     const [selectedSentence, setSelectedSentence] = useState(null);
+    const [treeData, setTreeData] = useState(null);
+    const [isTreeVisible, setIsTreeVisible] = useState(false); 
+
+    const toggleTreeVisibility = () => {
+        setIsTreeVisible(prev => !prev);
+    };
 
     const handleMouseEnter = (text) => {
         setHighlightedText(text);
@@ -22,15 +31,43 @@ function Chat({ onUpload, textContent, setHighlightedText }) {
 
     const summarizeText = useCallback(async (text) => {
         try {
-            const prompt = 
-            `Please summarize the key points of the following paper in a hierarchical structure format for easy conversion to a tree diagram: ${text}`;
+            const prompt = `
+            Please summarize the key points of the following paper in a hierarchical tree structure format.
+            Organize the summary into main categories and subcategories, similar to the example below:
+
+            For example:
+            {
+            "name": "Main Topic",
+            "children": [
+            {
+            "name": "Subtopic 1",
+            "children": [
+                {"name": "Key Point A", "value": 1},
+                {"name": "Key Point B", "value": 2}
+            ]
+            },
+            {
+            "name": "Subtopic 2",
+            "children": [
+                {"name": "Key Point C", "value": 3},
+                {"name": "Key Point D", "value": 4}
+            ]
+            }
+            ]
+            }
+
+            Ensure that the hierarchy follows this format strictly. Generate the structure based on the following text: ${text}`;
             const result = await model.generateContent(prompt);
     
             if (!result || !result.response) {
                 throw new Error('Failed to summarize text.');
             }
-    
-            return result.response.text();
+            const cleanedJsonString = result.response.text().replace(/```(?:json)?|```/g, '').trim();
+            // console.log("Response:", cleanedJsonString);
+            const cleanedResponse = jsonrepair(cleanedJsonString)
+            // console.log("Cleaned Response:", cleanedResponse);
+
+            return JSON.parse(cleanedResponse);
         } catch (error) {
             console.error("Error summarizing the text:", error);
             return "Sorry, there was an error summarizing the document.";
@@ -41,7 +78,8 @@ function Chat({ onUpload, textContent, setHighlightedText }) {
         const summarize = async () => {
             if (textContent.length > 0 && !summaryGenerated) {
                 const summary = await summarizeText(textContent);
-                setMessages(prevMessages => [...prevMessages, { sender: 'chatbot', text: summary }]);
+                setMessages(prevMessages => [...prevMessages, { sender: 'chatbot', text: "Tree chart generated. Please click the icon to check the result. Feel free to ask me questions!" }]);
+                setTreeData(summary);
                 setSummaryGenerated(true);
             }
         };
@@ -106,6 +144,12 @@ function Chat({ onUpload, textContent, setHighlightedText }) {
 
     return (
         <div className="chat-container">
+            <div className="tree-toggle-icon" onClick={toggleTreeVisibility}>
+                <span className="material-icons">
+                    {isTreeVisible ? 'close' : 'account_tree'}
+                </span>
+            </div>
+
             <div className="message-display">
                 {messages.map((msg, msgIndex) => (
                     <div 
@@ -127,6 +171,21 @@ function Chat({ onUpload, textContent, setHighlightedText }) {
                 ))}
                 <div ref={messageEndRef} />
             </div>
+            {isTreeVisible && treeData && (
+    <div className="floating-tree" style={{ padding: '0px', background: '#f9f9f9', borderRadius: '8px', boxShadow: '0 4px 8px rgba(0,0,0,0.1)' }}>
+        {/* <button className="close-tree-button" onClick={toggleTreeVisibility} style={{ background: 'transparent', border: 'none', fontSize: '16px', cursor: 'pointer' }}>X</button> */}
+        <Tree
+            initialDepth={1}
+            data={treeData}
+            svgProps={{
+                className: 'tree-svg',
+                style: { background: 'white', borderRadius: '0px' },
+            }}
+            animated={true}
+            orientation="vertical"
+        />
+    </div>
+            )}
             <div className="input-container">
                 <input type="file" onChange={handleFileUpload} id="file-input" className="file-input" />
                 <label htmlFor="file-input" className="file-upload-button">
