@@ -5,7 +5,7 @@ import { jsonrepair } from 'jsonrepair';
 import 'react-tree-graph/dist/style.css';
 
 const { GoogleGenerativeAI } = require("@google/generative-ai");
-const genAI = new GoogleGenerativeAI('AIzaSyCj6783aYaHpyFHvBQAOJFRN0LRkA7dhvM');
+const genAI = new GoogleGenerativeAI('YOUR_KEY');
 const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
 function Chat({ onUpload, textContent, setHighlightedText }) {
