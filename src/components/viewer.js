@@ -70,7 +70,7 @@ const Viewer = ({ file, setTextContent, highlightedText }) => {
 
     const fullText = extractedText.join(' ');
 
-    const referenceIndex = fullText.indexOf('R EFERENCES');
+    const referenceIndex = fullText.indexOf('R EFERENCES'); // 删除参考文献之后的文本，这个硬检测着实是想不到其他办法了
     const finalText =
       referenceIndex !== -1 ? fullText.slice(0, referenceIndex) : fullText;
 
@@ -113,36 +113,6 @@ const Viewer = ({ file, setTextContent, highlightedText }) => {
       setPageInputValue(currentPage.toString());
     }
   };
-
-  const highlightText = (highlightedText, finalText) => {
-    const fullTextTokens = finalText.split(/\s+/);
-    const highlightedTokens = highlightedText.split(/\s+/);
-
-    const highlightedSentence = highlightedTokens.map((word, index) => {
-      let className = '';
-
-      if (fullTextTokens.includes(word)) {
-        className = `ngram`;
-      }
-
-      if (!fullTextTokens.includes(word)) {
-        className = 'new-word';
-      }
-
-      if (/^[A-Z]/.test(word)) {
-        className = 'new-entity';
-      }
-
-      return (
-        <span key={index} className={className}>
-          {word}{' '}
-        </span>
-      );
-    });
-
-    return highlightedSentence;
-  };
-
 
   return (
     <div className="pdf-viewer-container">
@@ -191,13 +161,6 @@ const Viewer = ({ file, setTextContent, highlightedText }) => {
           <p className="no-pdf-message">No PDF file uploaded</p>
         )}
       </div>
-      {highlightedText && (
-        <div className="highlighted-text-container">
-          <div className="highlighted-summary">
-            {highlightText(highlightedText, file ? file : '')}
-          </div>
-        </div>
-      )}
       {error && <p>{error}</p>}
     </div>
   );
