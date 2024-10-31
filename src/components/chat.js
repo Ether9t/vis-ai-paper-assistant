@@ -7,7 +7,7 @@ import { useCenteredTree } from "./helpers.js";
 import ReactMarkdown from 'react-markdown';
 
 const { GoogleGenerativeAI } = require("@google/generative-ai");
-const genAI = new GoogleGenerativeAI('AIzaSyCj6783aYaHpyFHvBQAOJFRN0LRkA7dhvM');
+const genAI = new GoogleGenerativeAI('YOUR_KEY');
 const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
 function Chat({ onUpload, textContent, setHighlightedText }) { // 这里是把高亮的文本传给隔壁viewer
