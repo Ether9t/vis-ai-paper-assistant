@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Document, Page, pdfjs } from 'react-pdf';
 import 'react-pdf/dist/esm/Page/AnnotationLayer.css';
 import 'react-pdf/dist/esm/Page/TextLayer.css';
@@ -11,7 +11,7 @@ pdfjs.GlobalWorkerOptions.workerSrc = new URL(
 
 const Viewer = ({ file, setTextContent, highlightedText }) => {
   const [numPages, setNumPages] = useState(null);
-  const [currentPage, setCurrentPage] = useState(1);
+  const [currentPage, setCurrentPage] = useState(1); // 设置初始页数是1
   const [pageInputValue, setPageInputValue] = useState('1');
   const [error, setError] = useState(null);
   const [scale, setScale] = useState(1.0);
@@ -53,34 +53,59 @@ const Viewer = ({ file, setTextContent, highlightedText }) => {
     setPageInputValue(currentPage.toString());
   }, [currentPage]);
 
-  const onDocumentLoadSuccess = async ({ numPages }) => {
+  const loadTextContent = useCallback(async () => {
+    if (file) {
+      const extractedText = [];
+      const pdf = await pdfjs.getDocument(file).promise;
+      const numPages = await pdf.numPages;
+      for (let pageNumber = 1; pageNumber <= numPages; pageNumber++) {
+        const page = await pdf.getPage(pageNumber);
+        const textContent = await page.getTextContent();
+        const textItems = textContent.items.map((item) => item.str).join(' ');
+        const cleanedText = textItems.replace(/\s+/g, ' ').trim();
+        extractedText.push(cleanedText);
+      }
+
+      const fullText = extractedText.join(' ');
+      const referenceIndex = fullText.indexOf('R EFERENCES');
+      const finalText =
+        referenceIndex !== -1 ? fullText.slice(0, referenceIndex) : fullText;
+      setTextContent(finalText);
+    }
+  }, [file, setTextContent]);
+
+  useEffect(() => {
+    if (file) {
+      loadTextContent();
+    }
+  }, [file, loadTextContent]);
+
+  const onDocumentLoadSuccess = ({ numPages }) => {
     setNumPages(numPages);
     setError(null);
-
-    const extractedText = [];
-    const pdf = await pdfjs.getDocument(file).promise;
-    for (let pageNumber = 1; pageNumber <= numPages; pageNumber++) {
-      const page = await pdf.getPage(pageNumber);
-      const textContent = await page.getTextContent();
-      const textItems = textContent.items.map((item) => item.str).join(' ');
-      const cleanedText = textItems.replace(/\s+/g, ' ').trim();
-
-      extractedText.push(cleanedText);
-    }
-
-    const fullText = extractedText.join(' ');
-
-    const referenceIndex = fullText.indexOf('R EFERENCES'); // 删除参考文献之后的文本，这个硬检测着实是想不到其他办法了
-    const finalText =
-      referenceIndex !== -1 ? fullText.slice(0, referenceIndex) : fullText;
-
-    setTextContent(finalText);
     setCurrentPage(1);
   };
-
+  
   const onDocumentLoadError = (err) => {
     setError('Failed to load PDF file.');
   };
+  
+  useEffect(() => {
+    if (numPages > 0) {
+      const interval = setInterval(() => {
+        setCurrentPage((prevPage) => {
+          if (prevPage < numPages) {
+            return prevPage + 1;
+          } else {
+            clearInterval(interval);
+            return prevPage;
+          }
+        });
+      }, 2000); // 每2秒加载一页，因为不知道为什么加载大文件会直接黑屏
+  
+      return () => clearInterval(interval);
+    }
+  }, [numPages]); 
 
   const handleZoomIn = () => {
     setScale((prevScale) => Math.min(prevScale + 0.2, 3));
@@ -151,6 +176,7 @@ const Viewer = ({ file, setTextContent, highlightedText }) => {
                   key={`page_${index + 1}`}
                   className="pdf-page"
                   data-page-number={index + 1}
+                  style={{ display: index + 1 <= currentPage ? 'block' : 'none' }}
                   ref={(el) => (pageRefs.current[index] = el)}
                 >
                   <Page pageNumber={index + 1} scale={scale} />

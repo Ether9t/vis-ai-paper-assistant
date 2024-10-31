@@ -133,19 +133,28 @@ justify-content: center;
 box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
 }
 
-.floating-tree {
-position: fixed;
-top: 10%;
-transform: translateX(-50%);
-width: 85%;
-height: 85%;
-background-color: rgba(255, 255, 255, 0.95);
-z-index: 1000;
-overflow: auto;
-padding: 20px;
-box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
-overflow: hidden;
+.tree-message {
+  background-color: #ffffff;
+  color: black;
+  align-self: flex-start;
+  margin-right: auto;
+  max-width: 100%;
+  height: 500px;
 }
+
+.floating-tree {
+  position: fixed;
+  top: 10%;
+  transform: translateX(-50%);
+  width: 85%;
+  height: 85%;
+  background-color: rgba(255, 255, 255, 0.95);
+  z-index: 1000;
+  overflow: auto;
+  padding: 20px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  overflow: hidden;
+  }
 
 .notification {
   background-color: #f9f9f9;
