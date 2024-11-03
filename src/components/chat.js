@@ -45,7 +45,7 @@ function Chat({ onUpload, textContent, setHighlightedText }) { // 这里是把�
         const [isHovered, setIsHovered] = React.useState(false);
         const maxLength = 100;
         const isLongDescription = nodeDatum.description && nodeDatum.description.length > maxLength;
-        const descriptionHeight = isLongDescription ? (isHovered || isExpanded ? nodeDatum.description.length: 70) : 10;
+        const descriptionHeight = isLongDescription ? (isHovered || isExpanded ? nodeDatum.description.length: 70) : 30;
         const height = descriptionHeight
         const textLength = nodeDatum.name.length;
         let yOffset; // 节点显示name的偏移量，感觉应该不是这么硬写的吧！
