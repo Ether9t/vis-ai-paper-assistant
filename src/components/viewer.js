@@ -76,16 +76,16 @@ const Viewer = ({ file, setTextContent, highlightedText }) => {
     const highlights = [];
     const normalizedHighlightedText = highlightedText.trim().toLowerCase();
     const words = normalizedHighlightedText.split(/\s+/);
-    
+
     textItems.forEach((item, index) => {
       const normalizedItemStr = item.str.trim().toLowerCase();
       words.forEach(word => {
         if (normalizedItemStr.includes(word)) {
-          highlights.push({ index, pageNumber: item.pageNumber });
+          highlights.push({ index, pageNumber: item.pageNumber, strItem: normalizedItemStr });
         }
       });
     });
-  
+
     return highlights;
   };
 
@@ -104,11 +104,11 @@ const Viewer = ({ file, setTextContent, highlightedText }) => {
     setError(null);
     setCurrentPage(1);
   };
-  
+
   const onDocumentLoadError = (err) => {
     setError('Failed to load PDF file.');
   };
-  
+
   const handleZoomIn = () => {
     setScale((prevScale) => Math.min(prevScale + 0.2, 3));
   };
@@ -141,6 +141,42 @@ const Viewer = ({ file, setTextContent, highlightedText }) => {
     }
   };
 
+  // function highlightPattern(text, pattern) {
+  //   console.log('update custom');
+
+  //       const globalItemIndex = getGlobalItemIndex(text.pageNumber, text.itemIndex);
+  //       const isHighlighted = pattern.some(
+  //           (highlight) =>
+  //               highlight.index === globalItemIndex &&
+  //               highlight.pageNumber === text.pageNumber
+  //       );
+  //       return (
+  //           `<span
+  //               style={{
+  //                   backgroundColor: ${isHighlighted? 'yellow' : 'transparent'} ,
+  //               }}
+  //               className={${isHighlighted? 'highlighted-text' : ''} }
+  //           >
+  //               ${text.str}
+  //           </span>`
+  //       );
+  // }
+  // const myCustomTextRender = useCallback(
+  //   (textItem) => highlightPattern(textItem, highlights),
+  //   [highlights]
+  // )
+  const myCustomTextRender = ({ str, itemIndex, pageNumber }) => {
+    const globalItemIndex = getGlobalItemIndex(pageNumber, itemIndex);
+    let newStr = str
+    highlights.forEach((highlight) => {
+      if (highlight.index === globalItemIndex && highlight.pageNumber === pageNumber) {
+        highlight.strItem.split(' ').forEach((aaa, index) => {
+          newStr = newStr.replace(aaa, (value) => `<mark>${value}</mark>`)
+        });
+      }
+    })
+    return newStr
+  }
   return (
     <div className="pdf-viewer-container">
       {file && (
@@ -178,26 +214,27 @@ const Viewer = ({ file, setTextContent, highlightedText }) => {
                   ref={(el) => (pageRefs.current[i] = el)}
                 >
                   <Page
-                      pageNumber={pageNumber}
-                      scale={scale}
-                      customTextRenderer={({ str, itemIndex }) => {
-                          const globalItemIndex = getGlobalItemIndex(pageNumber, itemIndex);
-                          const isHighlighted = highlights.some(
-                              (highlight) =>
-                                  highlight.index === globalItemIndex &&
-                                  highlight.pageNumber === pageNumber
-                          );
-                          return (
-                              <span
-                                  style={{
-                                      backgroundColor: isHighlighted ? 'yellow' : 'transparent',
-                                  }}
-                                  className={isHighlighted ? 'highlighted-text' : ''}
-                              >
-                                  {str}
-                              </span>
-                          );
-                      }}
+                    pageNumber={pageNumber}
+                    scale={scale}
+                    customTextRenderer={myCustomTextRender}
+                  // customTextRenderer={({ str, itemIndex }) => {
+                  //     const globalItemIndex = getGlobalItemIndex(pageNumber, itemIndex);
+                  //     const isHighlighted = highlights.some(
+                  //         (highlight) =>
+                  //             highlight.index === globalItemIndex &&
+                  //             highlight.pageNumber === pageNumber
+                  //     );
+                  //     return (
+                  //       `<span
+                  //       style={{
+                  //           backgroundColor: ${isHighlighted? 'yellow' : 'transparent'} ,
+                  //       }}
+                  //       className={${isHighlighted? 'highlighted-text' : ''} }
+                  //   >
+                  //       ${str}
+                  //   </span>`
+                  //     );
+                  // }}
                   />
 
                 </div>
