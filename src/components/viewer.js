@@ -24,9 +24,11 @@ const Viewer = ({ file, setTextContent, highlightedText }) => {
   const loadTextContent = useCallback(async () => {
     if (file) {
       const extractedTextItems = [];
+      const seenStrings = new Set(); // 用于去除重复字符串
       const pdf = await pdfjs.getDocument(file).promise;
       const numPages = pdf.numPages;
       const pageCounts = [];
+  
       for (let pageNumber = 1; pageNumber <= numPages; pageNumber++) {
         const page = await pdf.getPage(pageNumber);
         const textContent = await page.getTextContent();
@@ -38,20 +40,29 @@ const Viewer = ({ file, setTextContent, highlightedText }) => {
           dir: item.dir,
           fontName: item.fontName,
           pageNumber: pageNumber,
-        }));
+        })).filter(item => {
+          // 标准化字符串，用于去重
+          const normalizedStr = item.str.trim().toLowerCase();
+          if (seenStrings.has(normalizedStr)) {
+            return false; // 如果已经见过，过滤掉
+          }
+          seenStrings.add(normalizedStr); // 添加到集合中，避免重复
+          return true; // 保留该项
+        });
+  
         extractedTextItems.push(...pageTextItems);
         pageCounts.push(pageTextItems.length);
       }
-
+  
       setTextItems(extractedTextItems);
       setPageItemCounts(pageCounts);
-
+  
       // 提取全文本内容用于 AI 总结
       const fullText = extractedTextItems.map(item => item.str).join(' ');
       setTextContent(fullText);
     }
   }, [file, setTextContent]);
-
+  
   // 使用 useEffect 加载文本内容
   useEffect(() => {
     if (file) {
@@ -78,16 +89,25 @@ const Viewer = ({ file, setTextContent, highlightedText }) => {
     const words = normalizedHighlightedText.split(/\s+/);
 
     textItems.forEach((item, index) => {
-      const normalizedItemStr = item.str.trim().toLowerCase();
-      words.forEach(word => {
-        if (normalizedItemStr.includes(word)) {
-          highlights.push({ index, pageNumber: item.pageNumber, strItem: normalizedItemStr });
-        }
-      });
+        const normalizedItemStr = item.str.trim().toLowerCase();
+        words.forEach(word => {
+            if (normalizedItemStr.includes(word)) {
+                const alreadyExists = highlights.some(
+                    highlight =>
+                        highlight.pageNumber === item.pageNumber &&
+                        highlight.strItem === item.str
+                );
+
+                if (!alreadyExists) {
+                    highlights.push({ index, pageNumber: item.pageNumber, strItem: item.str });
+                }
+            }
+        });
     });
 
     return highlights;
-  };
+};
+
 
   // 定义 getGlobalItemIndex 函数
   const getGlobalItemIndex = (pageNumber, itemIndex) => {
@@ -112,7 +132,7 @@ const Viewer = ({ file, setTextContent, highlightedText }) => {
   const handleZoomIn = () => {
     setScale((prevScale) => Math.min(prevScale + 0.2, 3));
   };
-
+  
   const handleZoomOut = () => {
     setScale((prevScale) => Math.max(prevScale - 0.2, 0.5));
   };
@@ -167,16 +187,26 @@ const Viewer = ({ file, setTextContent, highlightedText }) => {
   // )
   const myCustomTextRender = ({ str, itemIndex, pageNumber }) => {
     const globalItemIndex = getGlobalItemIndex(pageNumber, itemIndex);
-    let newStr = str
+  
+    // 如果没有 highlights 或 highlightedText，直接返回原始字符串
+    if (!highlightedText || highlights.length === 0) {
+      return str;
+    }
+  
+    let newStr = str;
     highlights.forEach((highlight) => {
       if (highlight.index === globalItemIndex && highlight.pageNumber === pageNumber) {
-        highlight.strItem.split(' ').forEach((aaa, index) => {
-          newStr = newStr.replace(aaa, (value) => `<mark>${value}</mark>`)
+        // 为了避免重复替换，使用新字符串中的值
+        highlight.strItem.split(' ').forEach((word) => {
+          const regex = new RegExp(`\\b${word}\\b`, 'gi'); // 使用正则匹配完整单词
+          newStr = newStr.replace(regex, `<mark>${word}</mark>`);
         });
       }
-    })
-    return newStr
-  }
+    });
+  
+    return newStr;
+  };
+  
   return (
     <div className="pdf-viewer-container">
       {file && (
