@@ -1,3 +1,4 @@
+// viewer.js
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Document, Page, pdfjs } from 'react-pdf';
 import 'react-pdf/dist/esm/Page/AnnotationLayer.css';
@@ -16,69 +17,87 @@ const Viewer = ({ file, setTextContent, highlightedText }) => {
   const [error, setError] = useState(null);
   const [scale, setScale] = useState(1.0);
   const pageRefs = useRef([]);
-  // console.log("highlightedText:", highlightedText); // 检查chat部分中高亮的文本是否传递成功
-
-  useEffect(() => {
-    const options = {
-      root: null,
-      rootMargin: '0px',
-      threshold: 0.5,
-    };
-
-    const callback = (entries) => {
-      entries.forEach((entry) => {
-        if (entry.isIntersecting) {
-          const pageNumber = parseInt(entry.target.getAttribute('data-page-number'));
-          setCurrentPage(pageNumber);
-        }
-      });
-    };
-
-    const observer = new IntersectionObserver(callback, options);
-    const pages = pageRefs.current;
-    pageRefs.current.forEach((page) => {
-      if (page) observer.observe(page);
-    });
-
-    return () => {
-      if (observer) {
-        pages.forEach((page) => {
-          if (page) observer.unobserve(page);
-        });
-      }
-    };
-  }, [numPages]);
-
-  useEffect(() => {
-    setPageInputValue(currentPage.toString());
-  }, [currentPage]);
+  const [textItems, setTextItems] = useState([]);
+  const [highlights, setHighlights] = useState([]);
+  const [pageItemCounts, setPageItemCounts] = useState([]);
 
   const loadTextContent = useCallback(async () => {
     if (file) {
-      const extractedText = [];
+      const extractedTextItems = [];
       const pdf = await pdfjs.getDocument(file).promise;
-      const numPages = await pdf.numPages;
+      const numPages = pdf.numPages;
+      const pageCounts = [];
       for (let pageNumber = 1; pageNumber <= numPages; pageNumber++) {
         const page = await pdf.getPage(pageNumber);
         const textContent = await page.getTextContent();
-        const textItems = textContent.items.map((item) => item.str).join(' ');
-        const cleanedText = textItems.replace(/\s+/g, ' ').trim();
-        extractedText.push(cleanedText);
+        const pageTextItems = textContent.items.map((item) => ({
+          str: item.str,
+          transform: item.transform,
+          width: item.width,
+          height: item.height,
+          dir: item.dir,
+          fontName: item.fontName,
+          pageNumber: pageNumber,
+        }));
+        extractedTextItems.push(...pageTextItems);
+        pageCounts.push(pageTextItems.length);
       }
 
-      const fullText = extractedText.join(' ');
-      const referenceIndex = fullText.indexOf('R EFERENCES');
-      const finalText =
-        referenceIndex !== -1 ? fullText.slice(0, referenceIndex) : fullText;
-      setTextContent(finalText);
+      setTextItems(extractedTextItems);
+      setPageItemCounts(pageCounts);
+
+      // 提取全文本内容用于 AI 总结
+      const fullText = extractedTextItems.map(item => item.str).join(' ');
+      setTextContent(fullText);
     }
   }, [file, setTextContent]);
 
+  // 使用 useEffect 加载文本内容
   useEffect(() => {
     if (file) {
       loadTextContent();
     }
   }, [file, loadTextContent]);
+
+  // 当 highlightedText 或 textItems 变化时，查找需要高亮的文本项
+  useEffect(() => {
+    console.log("Highlighted Text:", highlightedText); // 调试日志
+    if (highlightedText && textItems.length > 0) {
+      const highlights = findHighlights(textItems, highlightedText);
+      console.log("Highlights found:", highlights); // 调试日志
+      setHighlights(highlights);
+    } else {
+      setHighlights([]);
+    }
+  }, [highlightedText, textItems]);
+
+  // 定义 findHighlights 函数
+  const findHighlights = (textItems, highlightedText) => {
+    const highlights = [];
+    const normalizedHighlightedText = highlightedText.trim().toLowerCase();
+    const words = normalizedHighlightedText.split(/\s+/);
+    
+    textItems.forEach((item, index) => {
+      const normalizedItemStr = item.str.trim().toLowerCase();
+      words.forEach(word => {
+        if (normalizedItemStr.includes(word)) {
+          highlights.push({ index, pageNumber: item.pageNumber });
+        }
+      });
+    });
+  
+    return highlights;
+  };
+
+  // 定义 getGlobalItemIndex 函数
+  const getGlobalItemIndex = (pageNumber, itemIndex) => {
+    let index = 0;
+    for (let i = 0; i < pageNumber - 1; i++) {
+      index += pageItemCounts[i] || 0;
+    }
+    index += itemIndex;
+    return index;
+  };
 
   const onDocumentLoadSuccess = ({ numPages }) => {
     setNumPages(numPages);
@@ -90,23 +109,6 @@ const Viewer = ({ file, setTextContent, highlightedText }) => {
     setError('Failed to load PDF file.');
   };
   
-  useEffect(() => {
-    if (numPages > 0) {
-      const interval = setInterval(() => {
-        setCurrentPage((prevPage) => {
-          if (prevPage < numPages) {
-            return prevPage + 1;
-          } else {
-            clearInterval(interval);
-            return prevPage;
-          }
-        });
-      }, 2000); // 每2秒加载一页，因为不知道为什么加载大文件会直接黑屏
-  
-      return () => clearInterval(interval);
-    }
-  }, [numPages]); 
-
   const handleZoomIn = () => {
     setScale((prevScale) => Math.min(prevScale + 0.2, 3));
   };
@@ -141,9 +143,8 @@ const Viewer = ({ file, setTextContent, highlightedText }) => {
 
   return (
     <div className="pdf-viewer-container">
-      {file &&(
+      {file && (
         <div className="controls fixed-controls">
-          {/* <span>Page</span> */}
           <input
             type="number"
             value={pageInputValue}
@@ -155,33 +156,53 @@ const Viewer = ({ file, setTextContent, highlightedText }) => {
           />
           <span>/ {numPages}</span>
           <span className="light-text">&nbsp;|&nbsp;</span>
-          {/* <span>Zoom</span> */}
           <button onClick={handleZoomOut}>-</button>
-          {/* <span>{Math.round(scale * 100)}%</span> */}
           <button onClick={handleZoomIn}>+</button>
         </div>
       )}
 
       <div className="pdf-viewer">
-        {/* 只有当 file 存在时才渲染 Document 组件，这个用来显示自定义的未上传pdf的提醒 */}
         {file ? (
           <Document
             file={file}
             onLoadSuccess={onDocumentLoadSuccess}
             onLoadError={onDocumentLoadError}
           >
-            {numPages &&
-              Array.from(new Array(numPages), (el, index) => (
+            {Array.from({ length: numPages }, (v, i) => {
+              const pageNumber = i + 1;
+              return (
                 <div
-                  key={`page_${index + 1}`}
+                  key={`page_${pageNumber}`}
                   className="pdf-page"
-                  data-page-number={index + 1}
-                  style={{ display: index + 1 <= currentPage ? 'block' : 'none' }}
-                  ref={(el) => (pageRefs.current[index] = el)}
+                  data-page-number={pageNumber}
+                  ref={(el) => (pageRefs.current[i] = el)}
                 >
-                  <Page pageNumber={index + 1} scale={scale} />
+                  <Page
+                      pageNumber={pageNumber}
+                      scale={scale}
+                      customTextRenderer={({ str, itemIndex }) => {
+                          const globalItemIndex = getGlobalItemIndex(pageNumber, itemIndex);
+                          const isHighlighted = highlights.some(
+                              (highlight) =>
+                                  highlight.index === globalItemIndex &&
+                                  highlight.pageNumber === pageNumber
+                          );
+                          return (
+                              <span
+                                  style={{
+                                      backgroundColor: isHighlighted ? 'yellow' : 'transparent',
+                                  }}
+                                  className={isHighlighted ? 'highlighted-text' : ''}
+                              >
+                                  {str}
+                              </span>
+                          );
+                      }}
+                  />
+
                 </div>
-              ))}
+              );
+            })}
           </Document>
         ) : (
           <p className="no-pdf-message">No PDF file uploaded</p>
