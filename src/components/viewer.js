@@ -87,26 +87,27 @@ const Viewer = ({ file, setTextContent, highlightedText }) => {
     const highlights = [];
     const normalizedHighlightedText = highlightedText.trim().toLowerCase();
     const words = normalizedHighlightedText.split(/\s+/);
-
+  
     textItems.forEach((item, index) => {
-        const normalizedItemStr = item.str.trim().toLowerCase();
-        words.forEach(word => {
-            if (normalizedItemStr.includes(word)) {
-                const alreadyExists = highlights.some(
-                    highlight =>
-                        highlight.pageNumber === item.pageNumber &&
-                        highlight.strItem === item.str
-                );
-
-                if (!alreadyExists) {
-                    highlights.push({ index, pageNumber: item.pageNumber, strItem: item.str });
-                }
-            }
-        });
+      const normalizedItemStr = item.str.trim().toLowerCase();
+      words.forEach(word => {
+        if (normalizedItemStr.includes(word)) {
+          // 检查高亮列表中是否已经有相同的项目，避免重复
+          const alreadyExists = highlights.some(
+            highlight =>
+              highlight.pageNumber === item.pageNumber &&
+              highlight.strItem === item.str
+          );
+  
+          if (!alreadyExists) {
+            highlights.push({ index, pageNumber: item.pageNumber, strItem: item.str });
+          }
+        }
+      });
     });
-
+  
     return highlights;
-};
+  };
 
 
   // 定义 getGlobalItemIndex 函数

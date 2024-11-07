@@ -58,7 +58,7 @@ function Chat({ onUpload, textContent, setHighlightedText }) {
         const [isHovered, setIsHovered] = React.useState(false);
         const maxLength = 100;
         const isLongDescription = nodeDatum.description && nodeDatum.description.length > maxLength;
-        const descriptionHeight = isLongDescription ? (isHovered || isExpanded ? nodeDatum.description.length : 70) : 30;
+        const descriptionHeight = isLongDescription ? (isHovered || isExpanded ? nodeDatum.description.length : 70) : 45;
         const height = descriptionHeight;
         const textLength = nodeDatum.name.length;
         let yOffset;
@@ -221,20 +221,37 @@ function Chat({ onUpload, textContent, setHighlightedText }) {
             }
             ]
             }
-
+    
             Ensure that the hierarchy follows this format strictly. Generate the structure based on the following text: ${text}`;
+            
             const result = await model.generateContent(prompt);
     
             if (!result || !result.response) {
                 throw new Error('Failed to summarize text.');
             }
+    
             const cleanedJsonString = result.response.text().replace(/```(?:json)?|```/g, '').trim();
             const cleanedResponse = jsonrepair(cleanedJsonString);
-
-            return JSON.parse(cleanedResponse);
+    
+            // Try parsing the cleaned JSON, or throw an error if it's invalid
+            const parsedTree = JSON.parse(cleanedResponse);
+            
+            // Check if parsedTree has the expected structure with a `children` property
+            if (parsedTree && typeof parsedTree === 'object' && Array.isArray(parsedTree.children)) {
+                return parsedTree;
+            } else {
+                throw new Error('Parsed response is not in the expected format.');
+            }
         } catch (error) {
             console.error("Error summarizing the text:", error);
-            return null; // Return null on error
+    
+            // Return a fallback structure with a clear indication of the error
+            return {
+                name: "Error",
+                description: "Failed to generate a valid tree structure.",
+                isRoot: true,
+                children: []
+            };
         }
     }, []);
     
