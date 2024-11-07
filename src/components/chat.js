@@ -5,6 +5,7 @@ import { jsonrepair } from 'jsonrepair';
 import 'react-tree-graph/dist/style.css';
 import { useCenteredTree } from "./helpers.js";
 import ReactMarkdown from 'react-markdown';
+import {Tooltip} from 'antd'
 
 const { GoogleGenerativeAI } = require("@google/generative-ai");
 const genAI = new GoogleGenerativeAI('AIzaSyCj6783aYaHpyFHvBQAOJFRN0LRkA7dhvM');
@@ -21,6 +22,7 @@ function Chat({ onUpload, textContent, setHighlightedText }) { // 这里是把�
     const [showNotification, setShowNotification] = useState(false); // 展示↓这句话的提示框
     const responseSummary = 'You can click the icon to re-check the tree chart. Feel free to ask me questions!'
 
+    
     useEffect(() => { // 滚动到最下面
         if (messageEndRef.current) {
             messageEndRef.current.scrollIntoView({ behavior: 'smooth' });
@@ -45,7 +47,7 @@ function Chat({ onUpload, textContent, setHighlightedText }) { // 这里是把�
         const [isHovered, setIsHovered] = React.useState(false);
         const maxLength = 100;
         const isLongDescription = nodeDatum.description && nodeDatum.description.length > maxLength;
-        const descriptionHeight = isLongDescription ? (isHovered || isExpanded ? nodeDatum.description.length: 70) : 30;
+        const descriptionHeight = isLongDescription ? (isHovered || isExpanded ? nodeDatum.description.length: 70) : 45;
         const height = descriptionHeight
         const textLength = nodeDatum.name.length;
         let yOffset; // 节点显示name的偏移量，感觉应该不是这么硬写的吧！
@@ -53,31 +55,38 @@ function Chat({ onUpload, textContent, setHighlightedText }) { // 这里是把�
             yOffset = "-35";
         } 
         else if (15 < textLength && textLength <= 30) {
-            yOffset = "-50";
+            yOffset = "-60";
         } 
         else if (30 < textLength && textLength <= 40) {
             yOffset = "-65";
         }
-        else if (40 < textLength && textLength <= 100) {
+        else if (40 < textLength && textLength <= 60) {
+            yOffset = "-75";
+        }
+        else if (60 < textLength && textLength <= 100) {
             yOffset = "-95";
         }
         else if (100 < textLength && textLength <= 200) {
             yOffset = "-125";
         }
+        else {
+            yOffset = "-150";
+        }
 
         const handleMouseEnter = () => {
-        setIsHovered(true);
-        };
-    
-        const handleMouseLeave = () => {
-        if (!isExpanded) {
-            setIsHovered(false);
-        }
-        };
-    
-        const handleClick = () => {
-        setIsExpanded((prev) => !prev);
-        };
+            setIsHovered(true);
+            };
+        
+            const handleMouseLeave = () => {
+            if (!isExpanded) {
+                setIsHovered(false);
+            }
+            };
+        
+            const handleClick = () => {
+            setIsExpanded((prev) => !prev);
+            console.log("Clicked node text:", nodeDatum.originalText);
+            };
 
     return (
     <g>
@@ -87,6 +96,7 @@ function Chat({ onUpload, textContent, setHighlightedText }) { // 这里是把�
         x={nodeDatum.isRoot ? "-145" : "-60"}
         y={nodeDatum.isRoot ? "-30" : yOffset}
         >
+            
         <div style={{
             fontFamily: "Arial, sans-serif", 
             fontSize: "14px",
@@ -96,6 +106,7 @@ function Chat({ onUpload, textContent, setHighlightedText }) { // 这里是把�
         }}>
             {nodeDatum.name}
         </div>
+        
         </foreignObject>
 
     <circle 
@@ -110,7 +121,12 @@ function Chat({ onUpload, textContent, setHighlightedText }) { // 这里是把�
     />
 
     {hasDescription && (
-        <foreignObject width="500" height={height} x={30} y={nodeDatum.y}>
+        <foreignObject width={
+            isExpanded ? '300px' : 
+            isHovered ? '300px' : 
+            '100px'
+        }  height={height} x={30} y={nodeDatum.y}>
+            
             <div style={{
                 border: '1px solid rgba(204, 204, 204, 0.7)', // 这个是本来在文本后面的框，但是我不知道怎么把框显示在其他节点上
                 backgroundColor: '#f9f9f9', // 这里的设置都是关于节点的
@@ -126,7 +142,7 @@ function Chat({ onUpload, textContent, setHighlightedText }) { // 这里是把�
                 <div style={{ 
                     fontFamily: 'Arial, sans-serif', // 显示节点description的设置
                     fontSize: '12px', 
-                    overflow: isHovered || isExpanded ? 'visible' : 'hidden', 
+                    overflow: isHovered || isExpanded ? 'viusible' : 'hidden', 
                     textOverflow: 'ellipsis', 
                     whiteSpace: isHovered || isExpanded ? 'normal' : 'nowrap',
                     maxWidth: isHovered || isExpanded ? '100%' : '75%',
@@ -166,35 +182,34 @@ function Chat({ onUpload, textContent, setHighlightedText }) { // 这里是把�
     const summarizeTree = useCallback(async (text) => { // 专门为了生成树summary的部分，但是如果文档太短小似乎无法生成discription
         try {
             const prompt = `
-            Please summarize the key points of the following paper in a hierarchical tree structure format.
-            You have to use text from the original paper to give a brief description for each node.
-            Organize the summary into main categories and subcategories, similar to the example below but use text from the paper:
+            Please summarize the key points of the following paper in a hierarchical tree structure format. For each child node, provide a one sentence description based on the original text and include the original text as a reference.
+            Organize the summary into main categories and subcategories, similar to the example below, but using the text from the paper:
 
-            For example:
+            Example:
             {
             "name": "Main Topic",
-            "isRoot": true
+            "isRoot": true,
             "children": [
-            {
-            "name": "Subtopic 1",
-            "isRoot": false
-            "children": [
-                {"name": "Key Point A", "isRoot": false, "description": "description of Key Point A"},
-                {"name": "Key Point B", "isRoot": false, "description": "description of Key Point B"}
-            ]
-            },
-            {
-            "name": "Subtopic 2",
-            "children": [
-            "isRoot": false
-                {"name": "Key Point C", "isRoot": false, "description": "description of Key Point C"},
-                {"name": "Key Point D", "isRoot": false, "description": "description of Key Point D"}
-            ]
-            }
+                {
+                "name": "Subtopic 1",
+                "isRoot": false,
+                "children": [
+                    {"name": "Key Point A", "isRoot": false, "description": "Description of Key Point A", "originalText": "Original text used for generating the description of Key Point A"},
+                    {"name": "Key Point B", "isRoot": false, "description": "Description of Key Point B", "originalText": "Original text used for generating the description of Key Point B"}
+                ]
+                },
+                {
+                "name": "Subtopic 2",
+                "isRoot": false,
+                "children": [
+                    {"name": "Key Point C", "isRoot": false, "description": "Description of Key Point C", "originalText": "Original text used for generating the description of Key Point C"},
+                    {"name": "Key Point D", "isRoot": false, "description": "Description of Key Point D", "originalText": "Original text used for generating the description of Key Point D"}
+                ]
+                }
             ]
             }
 
-            Ensure that the hierarchy follows this format strictly. Generate the structure based on the following text: ${text}`;
+            Ensure that the hierarchy strictly follows this format. Generate the structure based on the following text: ${text}`;
             const result = await model.generateContent(prompt);
     
             if (!result || !result.response) {
@@ -334,6 +349,7 @@ function Chat({ onUpload, textContent, setHighlightedText }) { // 这里是把�
                                         translate={translate}
                                         orientation="horizontal"
                                         pathFunc={"step"} // 节点之间线的样式，这个遮挡少一点
+                                        depthFactor={300}
                                     />
                                 </div>
                             </>
@@ -357,6 +373,7 @@ function Chat({ onUpload, textContent, setHighlightedText }) { // 这里是把�
             </div>
             {isTreeVisible && treeData && (
             <div className="floating-tree" ref={containerRef} style={{ padding: '0px', background: '#f9f9f9', borderRadius: '8px', boxShadow: '0 4px 8px rgba(0,0,0,0.1)' }}>
+                
                 <Tree
                     initialDepth={2} // 初始显示的层级，这一块都是点击icon显示的树图的部分
                     data={treeData}
