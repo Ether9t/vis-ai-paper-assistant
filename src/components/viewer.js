@@ -107,6 +107,12 @@ const Viewer = ({ file, setTextContent, highlightedText }) => {
     }
   }, [numPages]); 
 
+  useEffect(() => {
+    if (currentPage > 1 && currentPage <= numPages) {
+      console.log(`Now on page ${currentPage}`);
+    }
+  }, [currentPage, numPages]);
+
   const handleZoomIn = () => {
     setScale((prevScale) => Math.min(prevScale + 0.2, 3));
   };
