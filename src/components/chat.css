@@ -117,7 +117,7 @@ cursor: pointer;
 }
 
 .tree-toggle-icon {
-position: absolute;
+position: fixed;
 top: 1%;
 left: 51%;
 cursor: pointer;
@@ -150,7 +150,6 @@ box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
   height: 85%;
   background-color: rgba(255, 255, 255, 0.95);
   z-index: 1000;
-  overflow: auto;
   padding: 20px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
   overflow: hidden;

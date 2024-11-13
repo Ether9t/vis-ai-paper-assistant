@@ -82,32 +82,59 @@ const Viewer = ({ file, setTextContent, highlightedText }) => {
     }
   }, [highlightedText, textItems]);
 
-  // 定义 findHighlights 函数
   const findHighlights = (textItems, highlightedText) => {
     const highlights = [];
     const normalizedHighlightedText = highlightedText.trim().toLowerCase();
-    const words = normalizedHighlightedText.split(/\s+/);
+  
+    // 输出 normalizedHighlightedText 以确认目标高亮内容
+    console.log("Normalized Highlighted Text:", normalizedHighlightedText);
+  
+    let combinedText = "";
+    let combinedItems = [];
   
     textItems.forEach((item, index) => {
       const normalizedItemStr = item.str.trim().toLowerCase();
-      words.forEach(word => {
-        if (normalizedItemStr.includes(word)) {
-          // 检查高亮列表中是否已经有相同的项目，避免重复
+  
+      // 累加当前文本到 combinedText，并保存对应的 `textItems`
+      combinedText += normalizedItemStr + " ";
+      combinedItems.push(item);
+  
+      // 输出每次合并后的 combinedText
+      console.log("Combined Text (Current):", combinedText);
+  
+      // 检查合并的文本是否包含完整的目标句子
+      if (combinedText.includes(normalizedHighlightedText)) {
+        combinedItems.forEach((combinedItem, combinedIndex) => {
           const alreadyExists = highlights.some(
-            highlight =>
-              highlight.pageNumber === item.pageNumber &&
-              highlight.strItem === item.str
+            (highlight) =>
+              highlight.pageNumber === combinedItem.pageNumber &&
+              highlight.strItem === combinedItem.str
           );
   
           if (!alreadyExists) {
-            highlights.push({ index, pageNumber: item.pageNumber, strItem: item.str });
+            highlights.push({
+              index: combinedIndex,
+              pageNumber: combinedItem.pageNumber,
+              strItem: combinedItem.str,
+            });
           }
-        }
-      });
+        });
+  
+        // 匹配成功后，清空 combinedText 和 combinedItems，准备下一个匹配
+        combinedText = "";
+        combinedItems = [];
+      }
+  
+      // 如果 combinedText 过长而未匹配到，重置以避免过大字符串
+      if (combinedText.length > 500) {
+        combinedText = "";
+        combinedItems = [];
+      }
     });
   
     return highlights;
   };
+  
 
 
   // 定义 getGlobalItemIndex 函数
@@ -129,6 +156,12 @@ const Viewer = ({ file, setTextContent, highlightedText }) => {
   const onDocumentLoadError = (err) => {
     setError('Failed to load PDF file.');
   };
+
+  useEffect(() => {
+    if (currentPage > 1 && currentPage <= numPages) {
+      console.log(`Now on page ${currentPage}`);
+    }
+  }, [currentPage, numPages]);
 
   const handleZoomIn = () => {
     setScale((prevScale) => Math.min(prevScale + 0.2, 3));

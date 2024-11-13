@@ -12,7 +12,7 @@ function App() {
   };
   const [textContent, setTextContent] = useState([]);
   const [highlightedText, setHighlightedText] = useState(null);
-  console.log("textContent:", textContent); // 查看提取的文本是否传递成功，ctrl + shift + i开启控制台
+  //console.log("textContent:", textContent); // 查看提取的文本是否传递成功，ctrl + shift + i开启控制台
 
   return (
     <div className="app-container">

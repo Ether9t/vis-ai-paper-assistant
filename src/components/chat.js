@@ -1,4 +1,3 @@
-// Chat.js
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import './chat.css';
 import Tree from "react-d3-tree";
@@ -6,6 +5,7 @@ import { jsonrepair } from 'jsonrepair';
 import 'react-tree-graph/dist/style.css';
 import { useCenteredTree } from "./helpers.js";
 import ReactMarkdown from 'react-markdown';
+import { Tooltip } from 'antd';
 
 const { GoogleGenerativeAI } = require("@google/generative-ai");
 const genAI = new GoogleGenerativeAI('AIzaSyCj6783aYaHpyFHvBQAOJFRN0LRkA7dhvM');
@@ -18,20 +18,20 @@ function Chat({ onUpload, textContent, setHighlightedText }) {
     const [summaryGenerated, setSummaryGenerated] = useState(false);
     const [selectedSentence, setSelectedSentence] = useState(null);
     const [treeData, setTreeData] = useState(null);
-    const [isTreeVisible, setIsTreeVisible] = useState(false);
-    const [showNotification, setShowNotification] = useState(false);
-    const responseSummary = 'You can click the icon to re-check the tree chart. Feel free to ask me questions!';
+    const [isTreeVisible, setIsTreeVisible] = useState(false);  // 显示树的逻辑
+    const [showNotification, setShowNotification] = useState(false); // 展示↓这句话的提示框
+    const responseSummary = 'You can click the icon to re-check the tree chart. Feel free to ask me questions!'
 
-    useEffect(() => {
+    useEffect(() => { // 滚动到最下面
         if (messageEndRef.current) {
             messageEndRef.current.scrollIntoView({ behavior: 'smooth' });
         }
     }, [messages]);
 
-    const handleNodeMouseEnter = (description) => {
-        console.log("Highlighting text:", description); // 调试日志
-        setHighlightedText(description);
-    };
+    const handleNodeMouseEnter = (originalText) => {
+        console.log("Highlighting text:", originalText); // 调试日志
+        setHighlightedText(originalText);
+    };    
 
     const handleNodeMouseLeave = () => {
         console.log("Removing highlight"); // 调试日志
@@ -51,7 +51,7 @@ function Chat({ onUpload, textContent, setHighlightedText }) {
         );
     };
 
-    const RenderRectSvgNode  = ({ nodeDatum, toggleNode, handleNodeMouseEnter, handleNodeMouseLeave }) => {
+    const RenderRectSvgNode = ({ nodeDatum, toggleNode, handleNodeMouseEnter, handleNodeMouseLeave }) => {
         const hasChildren = nodeDatum.children && nodeDatum.children.length > 0;
         const hasDescription = Boolean(nodeDatum.description);
         const [isExpanded, setIsExpanded] = React.useState(false);
@@ -66,12 +66,15 @@ function Chat({ onUpload, textContent, setHighlightedText }) {
             yOffset = "-35";
         } 
         else if (15 < textLength && textLength <= 30) {
-            yOffset = "-50";
+            yOffset = "-60";
         } 
         else if (30 < textLength && textLength <= 40) {
             yOffset = "-65";
         }
-        else if (40 < textLength && textLength <= 100) {
+        else if (40 < textLength && textLength <= 60) {
+            yOffset = "-75";
+        }
+        else if (60 < textLength && textLength <= 100) {
             yOffset = "-95";
         }
         else if (100 < textLength && textLength <= 200) {
@@ -79,104 +82,113 @@ function Chat({ onUpload, textContent, setHighlightedText }) {
         }
 
         const handleMouseEnterNode = () => {
-            if (nodeDatum.description) {
-                handleNodeMouseEnter(nodeDatum.description);
+            if (nodeDatum.originalText) { // 使用 originalText
+                handleNodeMouseEnter(nodeDatum.originalText);
             }
         };
 
         const handleMouseLeaveNode = () => {
             handleNodeMouseLeave();
         };
-
         const handleMouseEnter = () => {
             setIsHovered(true);
         };
-    
+        
         const handleMouseLeave = () => {
             if (!isExpanded) {
                 setIsHovered(false);
             }
         };
-    
+        
         const handleClick = () => {
             setIsExpanded((prev) => !prev);
+            console.log("Clicked node text:", nodeDatum.originalText);
         };
 
         return (
-        <g
-            onMouseEnter={handleMouseEnterNode}
-            onMouseLeave={handleMouseLeaveNode}
-        >
-            <foreignObject
-            width={"125"}
-            height={"500"}
-            x={nodeDatum.isRoot ? "-145" : "-60"}
-            y={nodeDatum.isRoot ? "-30" : yOffset}
+            <g
+                onMouseEnter={handleMouseEnterNode}
+                onMouseLeave={handleMouseLeaveNode}
             >
-            <div style={{
-                fontFamily: "Arial, sans-serif", 
-                fontSize: "14px",
-                fontWeight: "bold", 
-                textAlign: "center",
-                color: "black",
-            }}>
-                {nodeDatum.name}
-            </div>
-            </foreignObject>
-
-            <circle 
-                r="12"
-                fill={hasChildren ? "#bebebe" : "#ffffff"}
-                stroke={hasChildren ? "#bebebe" : "#cccccc"}
-                onClick={toggleNode}
-                style={{
-                cursor: 'pointer',
-                filter: 'drop-shadow(0 4px 6px rgba(0, 0, 0, 0.1))',
-                }} 
-            />
-
-            {hasDescription && (
-                <foreignObject width="500" height={`${height}px`} x={30} y={nodeDatum.y}>
+                <foreignObject
+                    width={"125"} // 这里的数值都是定义节点name的
+                    height={"500"}
+                    x={nodeDatum.isRoot ? "-145" : "-60"}
+                    y={nodeDatum.isRoot ? "-30" : yOffset}
+                >
                     <div style={{
-                        border: '1px solid rgba(204, 204, 204, 0.7)',
-                        backgroundColor: '#f9f9f9',
-                        borderRadius: '4px',
-                        boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)',
-                        padding: '5px',
-                        textAlign: 'left',
-                        display: 'flex',
-                        flexDirection: 'column', 
-                        justifyContent: 'flex-start',
-                        height: `${height}px`, // 修正 height 的赋值
+                        fontFamily: "Arial, sans-serif", 
+                        fontSize: "14px",
+                        fontWeight: "bold", 
+                        textAlign: "center",
+                        color: "black",
                     }}>
-                        <div style={{ 
-                            fontFamily: 'Arial, sans-serif',
-                            fontSize: '12px', 
-                            overflow: isHovered || isExpanded ? 'visible' : 'hidden', 
-                            textOverflow: 'ellipsis', 
-                            whiteSpace: isHovered || isExpanded ? 'normal' : 'nowrap',
-                            maxWidth: isHovered || isExpanded ? '100%' : '75%',
-                            maxHeight: isHovered || isExpanded ? 'none' : '50px', // 添加单位
-                        }}
-                        onMouseEnter={handleMouseEnter}
-                        onMouseLeave={handleMouseLeave}
-                        onClick={handleClick}
-                        title={isLongDescription ? nodeDatum.description : undefined}
-                        >
-                            {isHovered || isExpanded 
-                                ? nodeDatum.description 
-                                : isLongDescription 
-                                    ? `${nodeDatum.description.substring(0, maxLength)}...` 
-                                    : nodeDatum.description
-                            }
-                        </div>
+                        {nodeDatum.name}
                     </div>
                 </foreignObject>
-            )}
-        </g>
+
+                <circle 
+                    r="12"
+                    fill={hasChildren ? "#bebebe" : "#ffffff"}
+                    stroke={hasChildren ? "#bebebe" : "#cccccc"}
+                    onClick={toggleNode}
+                    style={{
+                        cursor: 'pointer',
+                        filter: 'drop-shadow(0 4px 6px rgba(0, 0, 0, 0.1))',
+                    }} 
+                />
+
+                {hasDescription && (
+                    <foreignObject 
+                        width={
+                            isExpanded ? '300px' : 
+                            isHovered ? '300px' : 
+                            '100px'
+                        }  
+                        height={`${height}px`} 
+                        x={30} 
+                        y={nodeDatum.y}
+                    >
+                        <div style={{
+                            border: '1px solid rgba(204, 204, 204, 0.7)', // 这个是本来在文本后面的框
+                            backgroundColor: '#f9f9f9', 
+                            borderRadius: '4px',
+                            boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)',
+                            padding: '5px',
+                            textAlign: 'left',
+                            display: 'flex',
+                            flexDirection: 'column', 
+                            justifyContent: 'flex-start',
+                            height: `${height}px`, // 修正 height 的赋值
+                        }}>
+                            <div style={{ 
+                                fontFamily: 'Arial, sans-serif',
+                                fontSize: '12px', 
+                                overflow: isHovered || isExpanded ? 'visible' : 'hidden', 
+                                textOverflow: 'ellipsis', 
+                                whiteSpace: isHovered || isExpanded ? 'normal' : 'nowrap',
+                                maxWidth: isHovered || isExpanded ? '100%' : '75%',
+                                maxHeight: isHovered || isExpanded ? 'none' : '50px', // 添加单位
+                            }}
+                            onMouseEnter={handleMouseEnter}
+                            onMouseLeave={handleMouseLeave}
+                            onClick={handleClick}
+                            title={isLongDescription ? nodeDatum.description : undefined}
+                            >
+                                {isHovered || isExpanded 
+                                    ? nodeDatum.description 
+                                    : isLongDescription 
+                                        ? `${nodeDatum.description.substring(0, maxLength)}...` 
+                                        : nodeDatum.description
+                                }
+                            </div>
+                        </div>
+                    </foreignObject>
+                )}
+            </g>
         );
     };
-          
+
     const toggleTreeVisibility = () => {
         setIsTreeVisible(prev => !prev);
     };
@@ -194,45 +206,43 @@ function Chat({ onUpload, textContent, setHighlightedText }) {
     const summarizeTree = useCallback(async (text) => {
         try {
             const prompt = `
-            Please summarize the key points of the following paper in a hierarchical tree structure format.
-            You have to use text from the original paper to give a brief description for each node.
-            Organize the summary into main categories and subcategories, similar to the example below but use text from the paper:
+            Please summarize the key points of the following paper in a hierarchical tree structure format. For each child node, provide a one sentence description based on the original text and include the original text as a reference.
+            Organize the summary into main categories and subcategories, similar to the example below, but using the text from the paper:
 
-            For example:
+            Example:
             {
             "name": "Main Topic",
             "isRoot": true,
             "children": [
-            {
-            "name": "Subtopic 1",
-            "isRoot": false,
-            "children": [
-                {"name": "Key Point A", "isRoot": false, "description": "description of Key Point A"},
-                {"name": "Key Point B", "isRoot": false, "description": "description of Key Point B"}
-            ]
-            },
-            {
-            "name": "Subtopic 2",
-            "isRoot": false,
-            "children": [
-                {"name": "Key Point C", "isRoot": false, "description": "description of Key Point C"},
-                {"name": "Key Point D", "isRoot": false, "description": "description of Key Point D"}
+                {
+                    "name": "Subtopic 1",
+                    "isRoot": false,
+                    "children": [
+                        {"name": "Key Point A", "isRoot": false, "description": "Description of Key Point A", "originalText": "Original text used for generating the description of Key Point A"},
+                        {"name": "Key Point B", "isRoot": false, "description": "Description of Key Point B", "originalText": "Original text used for generating the description of Key Point B"}
+                    ]
+                },
+                {
+                    "name": "Subtopic 2",
+                    "isRoot": false,
+                    "children": [
+                        {"name": "Key Point C", "isRoot": false, "description": "Description of Key Point C", "originalText": "Original text used for generating the description of Key Point C"},
+                        {"name": "Key Point D", "isRoot": false, "description": "Description of Key Point D", "originalText": "Original text used for generating the description of Key Point D"}
+                    ]
+                }
             ]
             }
-            ]
-            }
-    
+
             Ensure that the hierarchy follows this format strictly. Generate the structure based on the following text: ${text}`;
-            
             const result = await model.generateContent(prompt);
-    
+
             if (!result || !result.response) {
                 throw new Error('Failed to summarize text.');
             }
-    
+
             const cleanedJsonString = result.response.text().replace(/```(?:json)?|```/g, '').trim();
             const cleanedResponse = jsonrepair(cleanedJsonString);
-    
+
             // Try parsing the cleaned JSON, or throw an error if it's invalid
             const parsedTree = JSON.parse(cleanedResponse);
             
@@ -244,7 +254,7 @@ function Chat({ onUpload, textContent, setHighlightedText }) {
             }
         } catch (error) {
             console.error("Error summarizing the text:", error);
-    
+
             // Return a fallback structure with a clear indication of the error
             return {
                 name: "Error",
@@ -276,7 +286,7 @@ function Chat({ onUpload, textContent, setHighlightedText }) {
                 }, 3000);
             }
         };
-    
+
         summarize();
     }, [textContent, summarizeTree, summaryGenerated]);
 
@@ -284,11 +294,11 @@ function Chat({ onUpload, textContent, setHighlightedText }) {
         try {
             const prompt = `Answer the question based on the paper.\nContext: ${context}\nQuestion: ${question}`;
             const result = await model.generateContent(prompt);
-    
+
             if (!result || !result.response) {
                 throw new Error('Failed to generate an answer.');
             }
-    
+
             return result.response.text();
         } catch (error) {
             console.error("Error answering the question:", error);
@@ -370,26 +380,23 @@ function Chat({ onUpload, textContent, setHighlightedText }) {
                                         boxShadow: '0 4px 8px rgba(0,0,0,0.1)',
                                     }}
                                 >
-                                    {treeData && typeof treeData === 'object' ? (
-                                        <Tree
-                                            initialDepth={2}
-                                            data={treeData}
-                                            svgProps={{
-                                                className: 'tree-svg',
-                                                style: { background: 'white', borderRadius: '0px' },
-                                            }}
-                                            animated={true}
-                                            renderCustomNodeElement={(rd3tProps) => (
-                                                renderRectSvgNode(rd3tProps)
-                                            )}
-                                            dimensions={dimensions}
-                                            translate={translate}
-                                            orientation="horizontal"
-                                            pathFunc={"step"}
-                                        />
-                                    ) : (
-                                        <p>Unable to render tree. Please try again.</p>
-                                    )}
+                                     <Tree
+                                        initialDepth={2}
+                                        data={treeData}
+                                        svgProps={{
+                                            className: 'tree-svg',
+                                            style: { background: 'white', borderRadius: '0px' },
+                                        }}
+                                        animated={true}
+                                        renderCustomNodeElement={(rd3tProps) => (
+                                            renderRectSvgNode(rd3tProps)
+                                        )}
+                                        dimensions={dimensions} // 这两个都是为了自动居中的
+                                        translate={translate}
+                                        orientation="horizontal"
+                                        pathFunc={"step"} // 节点之间线的样式，这个遮挡少一点
+                                        depthFactor={300}
+                                    />
                                 </div>
                             </>
                         ) : (
@@ -410,10 +417,10 @@ function Chat({ onUpload, textContent, setHighlightedText }) {
                 ))}
                 <div ref={messageEndRef} />
             </div>
-            {isTreeVisible && treeData && typeof treeData === 'object' && (
+            {isTreeVisible && treeData && (
                 <div className="floating-tree" ref={containerRef} style={{ padding: '0px', background: '#f9f9f9', borderRadius: '8px', boxShadow: '0 4px 8px rgba(0,0,0,0.1)' }}>
                     <Tree
-                        initialDepth={2}
+                        initialDepth={2} // 初始显示的层级，这一块都是点击icon显示的树图的部分
                         data={treeData}
                         svgProps={{
                             className: 'tree-svg',
@@ -453,7 +460,6 @@ function Chat({ onUpload, textContent, setHighlightedText }) {
             </div>
         </div>
     );
-
 }
 
 export default Chat;
