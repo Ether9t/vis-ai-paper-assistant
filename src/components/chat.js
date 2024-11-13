@@ -389,6 +389,7 @@ function Chat({ onUpload, textContent, setHighlightedText }) { // 这里是把�
                     translate={translate}
                     orientation="horizontal"
                     pathFunc={"step"}
+                    depthFactor={300}
                 />
             </div>
                     )}
