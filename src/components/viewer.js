@@ -98,12 +98,11 @@ const Viewer = ({ file, setTextContent, highlightedText }) => {
       // 累加当前文本到 combinedText，并保存对应的 `textItems`
       combinedText += normalizedItemStr + " ";
       combinedItems.push(item);
-  
-      // 输出每次合并后的 combinedText
       console.log("Combined Text (Current):", combinedText);
-  
+
       // 检查合并的文本是否包含完整的目标句子
       if (combinedText.includes(normalizedHighlightedText)) {
+        console.log("Combined Text 111111111:", combinedText);
         combinedItems.forEach((combinedItem, combinedIndex) => {
           const alreadyExists = highlights.some(
             (highlight) =>
@@ -221,26 +220,20 @@ const Viewer = ({ file, setTextContent, highlightedText }) => {
   // )
   const myCustomTextRender = ({ str, itemIndex, pageNumber }) => {
     const globalItemIndex = getGlobalItemIndex(pageNumber, itemIndex);
-  
-    // 如果没有 highlights 或 highlightedText，直接返回原始字符串
     if (!highlightedText || highlights.length === 0) {
       return str;
     }
-  
-    let newStr = str;
+    let newStr = str
     highlights.forEach((highlight) => {
       if (highlight.index === globalItemIndex && highlight.pageNumber === pageNumber) {
-        // 为了避免重复替换，使用新字符串中的值
-        highlight.strItem.split(' ').forEach((word) => {
-          const regex = new RegExp(`\\b${word}\\b`, 'gi'); // 使用正则匹配完整单词
-          newStr = newStr.replace(regex, `<mark>${word}</mark>`);
+        highlight.strItem.split(' ').forEach((aaa, index) => {
+          newStr = newStr.replace(aaa, (value) => `<mark>${value}</mark>`)
         });
       }
-    });
-  
-    return newStr;
-  };
-  
+    })
+    return newStr
+  }
+
   return (
     <div className="pdf-viewer-container">
       {file && (
