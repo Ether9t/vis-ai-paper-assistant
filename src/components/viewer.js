@@ -85,55 +85,45 @@ const Viewer = ({ file, setTextContent, highlightedText }) => {
   const findHighlights = (textItems, highlightedText) => {
     const highlights = [];
     const normalizedHighlightedText = highlightedText.trim().toLowerCase();
-  
-    // 输出 normalizedHighlightedText 以确认目标高亮内容
-    console.log("Normalized Highlighted Text:", normalizedHighlightedText);
-  
-    let combinedText = "";
-    let combinedItems = [];
-  
-    textItems.forEach((item, index) => {
-      const normalizedItemStr = item.str.trim().toLowerCase();
-  
-      // 累加当前文本到 combinedText，并保存对应的 `textItems`
-      combinedText += normalizedItemStr + " ";
-      combinedItems.push(item);
-      console.log("Combined Text (Current):", combinedText);
 
-      // 检查合并的文本是否包含完整的目标句子
-      if (combinedText.includes(normalizedHighlightedText)) {
-        console.log("Combined Text 111111111:", combinedText);
-        combinedItems.forEach((combinedItem, combinedIndex) => {
-          const alreadyExists = highlights.some(
-            (highlight) =>
-              highlight.pageNumber === combinedItem.pageNumber &&
-              highlight.strItem === combinedItem.str
-          );
-  
-          if (!alreadyExists) {
+    console.log("Normalized Highlighted Text:", normalizedHighlightedText);
+
+    // 创建一个数组保存所有文本项的字符串
+    const allText = textItems.map(item => item.str).join(' ').toLowerCase();
+
+    // 找到高亮文本的起始索引
+    const startIndex = allText.indexOf(normalizedHighlightedText);
+    if (startIndex === -1) {
+        // 没有找到匹配的文本
+        return highlights;
+    }
+
+    // 计算匹配文本的结束索引
+    const endIndex = startIndex + normalizedHighlightedText.length;
+
+    // 现在，我们需要确定哪些 textItems 的字符范围在 [startIndex, endIndex) 内
+    let currentIndex = 0;
+
+    textItems.forEach(item => {
+        const itemStart = currentIndex;
+        const itemEnd = currentIndex + item.str.length;
+
+        // 检查当前文本项是否在高亮范围内
+        if (itemEnd > startIndex && itemStart < endIndex) {
             highlights.push({
-              index: combinedIndex,
-              pageNumber: combinedItem.pageNumber,
-              strItem: combinedItem.str,
+                index: item.itemIndex,
+                pageNumber: item.pageNumber,
+                strItem: item.str,
             });
-          }
-        });
-  
-        // 匹配成功后，清空 combinedText 和 combinedItems，准备下一个匹配
-        combinedText = "";
-        combinedItems = [];
-      }
-  
-      // 如果 combinedText 过长而未匹配到，重置以避免过大字符串
-      if (combinedText.length > 500) {
-        combinedText = "";
-        combinedItems = [];
-      }
+        }
+
+        currentIndex += item.str.length + 1; // 加1是因为我们在 join 时用了空格
     });
-  
+
+    console.log("Highlights found:", highlights);
     return highlights;
-  };
-  
+};
+
 
 
   // 定义 getGlobalItemIndex 函数

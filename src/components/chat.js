@@ -5,7 +5,6 @@ import { jsonrepair } from 'jsonrepair';
 import 'react-tree-graph/dist/style.css';
 import { useCenteredTree } from "./helpers.js";
 import ReactMarkdown from 'react-markdown';
-import { Tooltip } from 'antd';
 
 const { GoogleGenerativeAI } = require("@google/generative-ai");
 const genAI = new GoogleGenerativeAI('AIzaSyCj6783aYaHpyFHvBQAOJFRN0LRkA7dhvM');
