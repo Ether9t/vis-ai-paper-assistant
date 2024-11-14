@@ -72,10 +72,10 @@ const Viewer = ({ file, setTextContent, highlightedText }) => {
 
   // 当 highlightedText 或 textItems 变化时，查找需要高亮的文本项
   useEffect(() => {
-    // console.log("Highlighted Text:", highlightedText); // 调试日志
+    console.log("Highlighted Text:", highlightedText); // 调试日志
     if (highlightedText && textItems.length > 0) {
       const highlights = findHighlights(textItems, highlightedText);
-      // console.log("Highlights found:", highlights); // 调试日志
+      console.log("Highlights found:", highlights); // 调试日志
       setHighlights(highlights);
     } else {
       setHighlights([]);
@@ -86,7 +86,7 @@ const Viewer = ({ file, setTextContent, highlightedText }) => {
     const highlights = [];
     const normalizedHighlightedText = highlightedText.trim().toLowerCase();
   
-    // console.log("Normalized Highlighted Text:", normalizedHighlightedText);
+    console.log("Normalized Highlighted Text:", normalizedHighlightedText);
   
     // 创建一个数组保存所有文本项的字符串
     const allText = textItems.map(item => item.str).join(' ').toLowerCase();

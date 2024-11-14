@@ -104,18 +104,18 @@ function Chat({ onUpload, textContent, setHighlightedText }) {
     
         const handleClick = () => {
             setIsExpanded((prev) => !prev);
-            // console.log("Clicked node text:", nodeDatum.originalText);
-            console.log("Expand?", setIsExpanded)
+            console.log("Clicked node text:", nodeDatum.originalText);
+            // console.log("Expand?", setIsExpanded)
         };
 
         return (
             <g>
-                <g  onMouseEnter={handleMouseEnterNode}
+                <g  onMouseEnter={handleMouseEnterNode} // 高亮事件移动到这里了，注意！
                     onMouseLeave={handleMouseLeaveNode}
                 >
                 <foreignObject
                     width={"125"} // 这里的数值都是定义节点name的
-                    height={"100"}
+                    height={"100"} // 这里的width和height似乎可以控制pointer出现的范围也就是高亮会出现的范围，但是太小的话name显示不全
                     x={nodeDatum.isRoot ? "-145" : "-60"}
                     y={nodeDatum.isRoot ? "-30" : yOffset}
                 >
