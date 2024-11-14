@@ -433,9 +433,11 @@ function Chat({ onUpload, textContent, setHighlightedText }) {
                         translate={translate}
                         orientation="horizontal"
                         pathFunc={"step"}
+                        depthFactor={300}
                     />
                 </div>
-            )}
+                )}
+
             <div className="input-container">
                 <input
                     type="file"
