@@ -24,10 +24,12 @@ const Viewer = ({ file, setTextContent, highlightedText }) => {
   const loadTextContent = useCallback(async () => {
     if (file) {
       const extractedTextItems = [];
-      const seenStrings = new Set(); // 用于去除重复字符串
+      const seenStrings = new Set();
       const pdf = await pdfjs.getDocument(file).promise;
       const numPages = pdf.numPages;
       const pageCounts = [];
+  
+      let globalIndex = 0; // 初始化全局索引
   
       for (let pageNumber = 1; pageNumber <= numPages; pageNumber++) {
         const page = await pdf.getPage(pageNumber);
@@ -40,14 +42,14 @@ const Viewer = ({ file, setTextContent, highlightedText }) => {
           dir: item.dir,
           fontName: item.fontName,
           pageNumber: pageNumber,
+          itemIndex: globalIndex++, // 正确赋值全局索引
         })).filter(item => {
-          // 标准化字符串，用于去重
           const normalizedStr = item.str.trim().toLowerCase();
           if (seenStrings.has(normalizedStr)) {
-            return false; // 如果已经见过，过滤掉
+            return false;
           }
-          seenStrings.add(normalizedStr); // 添加到集合中，避免重复
-          return true; // 保留该项
+          seenStrings.add(normalizedStr);
+          return true;
         });
   
         extractedTextItems.push(...pageTextItems);
@@ -57,13 +59,11 @@ const Viewer = ({ file, setTextContent, highlightedText }) => {
       setTextItems(extractedTextItems);
       setPageItemCounts(pageCounts);
   
-      // 提取全文本内容用于 AI 总结
       const fullText = extractedTextItems.map(item => item.str).join(' ');
       setTextContent(fullText);
     }
-  }, [file, setTextContent]);
+  }, [file, setTextContent]);  
   
-  // 使用 useEffect 加载文本内容
   useEffect(() => {
     if (file) {
       loadTextContent();
@@ -85,45 +85,44 @@ const Viewer = ({ file, setTextContent, highlightedText }) => {
   const findHighlights = (textItems, highlightedText) => {
     const highlights = [];
     const normalizedHighlightedText = highlightedText.trim().toLowerCase();
-
+  
     console.log("Normalized Highlighted Text:", normalizedHighlightedText);
-
+  
     // 创建一个数组保存所有文本项的字符串
     const allText = textItems.map(item => item.str).join(' ').toLowerCase();
-
+  
     // 找到高亮文本的起始索引
     const startIndex = allText.indexOf(normalizedHighlightedText);
     if (startIndex === -1) {
-        // 没有找到匹配的文本
-        return highlights;
+      // 没有找到匹配的文本
+      return highlights;
     }
-
+  
     // 计算匹配文本的结束索引
     const endIndex = startIndex + normalizedHighlightedText.length;
-
+  
     // 现在，我们需要确定哪些 textItems 的字符范围在 [startIndex, endIndex) 内
     let currentIndex = 0;
-
+  
     textItems.forEach(item => {
-        const itemStart = currentIndex;
-        const itemEnd = currentIndex + item.str.length;
-
-        // 检查当前文本项是否在高亮范围内
-        if (itemEnd > startIndex && itemStart < endIndex) {
-            highlights.push({
-                index: item.itemIndex,
-                pageNumber: item.pageNumber,
-                strItem: item.str,
-            });
-        }
-
-        currentIndex += item.str.length + 1; // 加1是因为我们在 join 时用了空格
+      const itemStart = currentIndex;
+      const itemEnd = currentIndex + item.str.length;
+  
+      // 检查当前文本项是否在高亮范围内
+      if (itemEnd > startIndex && itemStart < endIndex) {
+        highlights.push({
+          index: item.itemIndex, // 使用正确的 itemIndex
+          pageNumber: item.pageNumber,
+          strItem: item.str,
+        });
+      }
+  
+      currentIndex += item.str.length + 1; // 加1是因为我们在 join 时用了空格
     });
-
-    console.log("Highlights found:", highlights);
+  
     return highlights;
-};
-
+  };
+  
 
 
   // 定义 getGlobalItemIndex 函数

@@ -8,6 +8,10 @@
 .highlighted-text {
   background-color: yellow !important; /* 确保高亮样式具有足够的优先级 */
 }
+mark {
+  background-color: yellow;
+  color: black;
+}
 
 .pdf-page {
     width: 100%;
