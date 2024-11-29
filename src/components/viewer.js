@@ -126,13 +126,18 @@ const Viewer = ({ file, setTextContent, highlightedText }) => {
 
 
   // 定义 getGlobalItemIndex 函数
-  const getGlobalItemIndex = (pageNumber, itemIndex) => {
-    let index = 0;
-    for (let i = 0; i < pageNumber - 1; i++) {
-      index += pageItemCounts[i] || 0;
-    }
-    index += itemIndex;
-    return index;
+  const getGlobalItemIndex = (pageNumber, itemIndex,str) => {
+    const pageItem = textItems.find((item) => item.pageNumber === pageNumber&&item.str===str);
+    // console.log(itemIndex,"==getGlobalItemIndex==",pageItem);
+    // console.log( pageItem?.itemIndex);
+    return pageItem?.itemIndex;
+
+    // let index = 0;
+    // for (let i = 0; i < pageNumber - 1; i++) {
+    //   index += pageItemCounts[i] || 0;
+    // }
+    // index += itemIndex;
+    // return index;
   };
 
   const onDocumentLoadSuccess = ({ numPages }) => {
@@ -208,19 +213,41 @@ const Viewer = ({ file, setTextContent, highlightedText }) => {
   //   [highlights]
   // )
   const myCustomTextRender = ({ str, itemIndex, pageNumber }) => {
-    const globalItemIndex = getGlobalItemIndex(pageNumber, itemIndex);
     if (!highlightedText || highlights.length === 0) {
       return str;
     }
+    const globalItemIndex = getGlobalItemIndex(pageNumber, itemIndex,str);
     let newStr = str
-    highlights.forEach((highlight) => {
-      if (highlight.index === globalItemIndex && highlight.pageNumber === pageNumber) {
-        highlight.strItem.split(' ').forEach((aaa, index) => {
-          newStr = newStr.replace(aaa, (value) => `<mark>${value}</mark>`)
-        });
-      }
-    })
+    // console.log(highlights);
+    
+    // console.log('aaaaaa=',newStr, globalItemIndex, pageNumber,itemIndex,pageItemCounts);
+    const filterList = highlights.find((highlight) => highlight.index === globalItemIndex && highlight.pageNumber === pageNumber);
+    if (filterList) {
+      // console.log('filterList=', filterList);
+      // const highlight = filterList[0];
+      // highlight.strItem.split(' ').forEach((aaa, index) => {
+      //   newStr = newStr.replace(aaa, (value) => `<mark>${value}</mark>`)
+      // });
+      // console.log('update custom=', globalItemIndex, pageNumber);
+      // console.log('newStr=', newStr);
+      newStr = `<mark>${newStr}</mark>`
+    }
     return newStr
+    
+
+    // highlights.forEach((highlight) => {
+    //   if (highlight.index === globalItemIndex && highlight.pageNumber === pageNumber) {
+
+    //     highlight.strItem.split(' ').forEach((aaa, index) => {
+    //       newStr = newStr.replace(aaa, (value) => `<mark  style={{ backgroundColor: 'blue', fontWeight: 'bold' }}>${value}</mark>`)
+    //     });
+
+    //     console.log('update custom=', globalItemIndex, pageNumber);
+    //     console.log('newStr=', newStr);
+        
+    //   }
+    // })
+    // return newStr
   }
 
   return (

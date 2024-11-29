@@ -7,8 +7,9 @@ import { useCenteredTree } from "./helpers.js";
 import ReactMarkdown from 'react-markdown';
 
 const { GoogleGenerativeAI } = require("@google/generative-ai");
-const genAI = new GoogleGenerativeAI('AIzaSyCj6783aYaHpyFHvBQAOJFRN0LRkA7dhvM');
-const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+const genAI = new GoogleGenerativeAI('YOUR_KEY');
+const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" }); // 创建树图的model
+const criticModel = genAI.getGenerativeModel({ model: "gemini-1.5-flash" }); //对树图中summary进行检查的model
 
 function Chat({ onUpload, textContent, setHighlightedText }) {
     const [messages, setMessages] = useState([]);
@@ -60,6 +61,8 @@ function Chat({ onUpload, textContent, setHighlightedText }) {
         const descriptionHeight = isLongDescription ? (isHovered || isExpanded ? nodeDatum.description.length : 70) : 45;
         const height = descriptionHeight;
         const textLength = nodeDatum.name.length;
+        const isDescriptionInvalid = !nodeDatum.isDescriptionValid;
+        const descriptionBackgroundColor = isDescriptionInvalid ? '#ffcccc' : '#f9f9f9'; // 假如summary是合理的/不合理的颜色
         let yOffset;
         if (textLength <= 15) {
             yOffset = "-35";
@@ -150,7 +153,7 @@ function Chat({ onUpload, textContent, setHighlightedText }) {
                         
                         <div style={{
                             border: '1px solid rgba(204, 204, 204, 0.7)', // 这个是本来在文本后面的框，但是我不知道怎么把框显示在其他节点上
-                            backgroundColor: '#f9f9f9', // 这里的设置都是关于节点的
+                            backgroundColor: descriptionBackgroundColor, // 这里的设置都是关于节点的
                             borderRadius: '4px',
                             boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)',
                             padding: '5px',
@@ -202,6 +205,40 @@ function Chat({ onUpload, textContent, setHighlightedText }) {
         setHighlightedText(null);
     };
 
+    const validateDescriptions = useCallback(async (node) => {
+        if (node.children && node.children.length > 0) {
+            for (const child of node.children) {
+                const validation = await validateDescription(child.originalText, child.description);
+                child.isDescriptionValid = validation.isValid;
+                child.validationExplanation = validation.explanation;
+                await validateDescriptions(child);
+            }
+        }
+    }, []);
+
+    const validateDescription = async (originalText, description) => {
+        const prompt = `
+            Please verify if the following description correctly summarizes the original text. 
+            Respond with "yes" if it matches or "no" if it does not. If it does not match, 
+            explain the discrepancy in a brief and clear way.
+    
+            Original Text: ${originalText}
+            Description: ${description}
+        `;
+        const result = await criticModel.generateContent(prompt);
+
+        if (!result || !result.response) {
+            throw new Error('Failed to validate description.');
+        }
+
+        const validationResult = result.response.text().trim().toLowerCase();
+        if (validationResult.includes("no") || validationResult.includes("discrepancy")) {
+            return { isValid: false, explanation: validationResult };
+        } else {
+            return { isValid: true, explanation: "" };
+        }
+    };
+
     const summarizeTree = useCallback(async (text) => {
         try {
             const prompt = `
@@ -245,24 +282,18 @@ function Chat({ onUpload, textContent, setHighlightedText }) {
             // Try parsing the cleaned JSON, or throw an error if it's invalid
             const parsedTree = JSON.parse(cleanedResponse);
             
-            // Check if parsedTree has the expected structure with a `children` property
-            if (parsedTree && typeof parsedTree === 'object' && Array.isArray(parsedTree.children)) {
+            if (parsedTree && Array.isArray(parsedTree.children)) {
+                // Now validate each node's description with the critic model
+                await validateDescriptions(parsedTree);  // This line was missing earlier!
                 return parsedTree;
             } else {
                 throw new Error('Parsed response is not in the expected format.');
             }
         } catch (error) {
             console.error("Error summarizing the text:", error);
-
-            // Return a fallback structure with a clear indication of the error
-            return {
-                name: "Error",
-                description: "Failed to generate a valid tree structure.",
-                isRoot: true,
-                children: []
-            };
+            return { name: "Error", description: "Failed to generate a valid tree structure.", isRoot: true, children: [] };
         }
-    }, []);
+    }, [validateDescriptions]);
     
     useEffect(() => {
         const summarize = async () => {
@@ -417,27 +448,26 @@ function Chat({ onUpload, textContent, setHighlightedText }) {
                 <div ref={messageEndRef} />
             </div>
             {isTreeVisible && treeData && (
-                <div className="floating-tree" ref={containerRef} style={{ padding: '0px', background: '#f9f9f9', borderRadius: '8px', boxShadow: '0 4px 8px rgba(0,0,0,0.1)' }}>
-                    <Tree
-                        initialDepth={2} // 初始显示的层级，这一块都是点击icon显示的树图的部分
-                        data={treeData}
-                        svgProps={{
-                            className: 'tree-svg',
-                            style: { background: 'white', borderRadius: '0px' },
-                        }}
-                        animated={true}
-                        renderCustomNodeElement={(rd3tProps) => (
-                            renderRectSvgNode(rd3tProps)
-                        )}
-                        dimensions={dimensions}
-                        translate={translate}
-                        orientation="horizontal"
-                        pathFunc={"step"}
-                        depthFactor={300}
-                    />
-                </div>
+            <div className="floating-tree" ref={containerRef} style={{ padding: '0px', background: '#f9f9f9', borderRadius: '8px', boxShadow: '0 4px 8px rgba(0,0,0,0.1)' }}>
+            <Tree
+                initialDepth={2} // 初始显示的层级，这一块都是点击icon显示的树图的部分
+                data={treeData}
+                svgProps={{
+                    className: 'tree-svg',
+                    style: { background: 'white', borderRadius: '0px' },
+                }}
+                animated={true}
+                renderCustomNodeElement={(rd3tProps) => (
+                    renderRectSvgNode(rd3tProps)
                 )}
-
+                dimensions={dimensions}
+                translate={translate}
+                orientation="horizontal"
+                pathFunc={"step"}
+                depthFactor={300}
+            />
+        </div>
+        )}
             <div className="input-container">
                 <input
                     type="file"
