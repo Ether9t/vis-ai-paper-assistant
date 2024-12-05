@@ -7,8 +7,9 @@ import { useCenteredTree } from "./helpers.js";
 import ReactMarkdown from 'react-markdown';
 
 const { GoogleGenerativeAI } = require("@google/generative-ai");
-const genAI = new GoogleGenerativeAI('YOUR KEY');
-const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+const genAI = new GoogleGenerativeAI('AIzaSyCj6783aYaHpyFHvBQAOJFRN0LRkA7dhvM');
+const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" }); // 创建树图的model
+const criticModel = genAI.getGenerativeModel({ model: "gemini-1.5-flash" }); //对树图中summary进行检查的model
 
 function Chat({ onUpload, textContent, setHighlightedText }) {
     const [messages, setMessages] = useState([]);
@@ -17,23 +18,23 @@ function Chat({ onUpload, textContent, setHighlightedText }) {
     const [summaryGenerated, setSummaryGenerated] = useState(false);
     const [selectedSentence, setSelectedSentence] = useState(null);
     const [treeData, setTreeData] = useState(null);
-    const [isTreeVisible, setIsTreeVisible] = useState(false);  // 显示树的逻辑
-    const [showNotification, setShowNotification] = useState(false); // 展示↓这句话的提示框
-    const responseSummary = 'You can click the icon to re-check the tree chart. Feel free to ask me questions!'
+    const [isTreeVisible, setIsTreeVisible] = useState(false);
+    const [showNotification, setShowNotification] = useState(false);
+    const responseSummary = 'You can click the icon to re-check the tree chart. Feel free to ask me questions!';
 
-    useEffect(() => { // 滚动到最下面
+    useEffect(() => {
         if (messageEndRef.current) {
             messageEndRef.current.scrollIntoView({ behavior: 'smooth' });
         }
     }, [messages]);
 
     const handleNodeMouseEnter = (originalText) => {
-        console.log("Highlighting text:", originalText); // 调试日志
+        console.log("Highlighting text:", originalText);
         setHighlightedText(originalText);
-    };    
+    };
 
     const handleNodeMouseLeave = () => {
-        console.log("Removing highlight"); // 调试日志
+        console.log("Removing highlight");
         setHighlightedText(null);
     };
 
@@ -60,6 +61,8 @@ function Chat({ onUpload, textContent, setHighlightedText }) {
         const descriptionHeight = isLongDescription ? (isHovered || isExpanded ? nodeDatum.description.length : 70) : 45;
         const height = descriptionHeight;
         const textLength = nodeDatum.name.length;
+        const isDescriptionInvalid = !nodeDatum.isDescriptionValid;
+        const descriptionBackgroundColor = isDescriptionInvalid ? '#ffcccc' : '#f9f9f9';
         let yOffset;
         if (textLength <= 15) {
             yOffset = "-35";
@@ -81,14 +84,14 @@ function Chat({ onUpload, textContent, setHighlightedText }) {
         }
 
         const handleMouseEnterNode = () => {
-            if (nodeDatum.originalText) { // 使用 originalText
+            if (nodeDatum.originalText) {
                 handleNodeMouseEnter(nodeDatum.originalText);
             }
         };
 
         const handleMouseLeaveNode = () => {
             handleNodeMouseLeave();
-            console.log('mouse leave node')
+            console.log('mouse leave node');
         };
 
         const handleMouseEnter = () => {
@@ -99,23 +102,22 @@ function Chat({ onUpload, textContent, setHighlightedText }) {
             if (!isExpanded) {
                 setIsHovered(false);
             }
-            console.info('mouse leave ')
+            console.info('mouse leave');
         };
     
         const handleClick = () => {
             setIsExpanded((prev) => !prev);
             console.log("Clicked node text:", nodeDatum.originalText);
-            // console.log("Expand?", setIsExpanded)
         };
 
         return (
             <g>
-                <g  onMouseEnter={handleMouseEnterNode} // 高亮事件移动到这里了，注意！
-                    onMouseLeave={handleMouseLeaveNode}
+                <g onMouseEnter={handleMouseEnterNode}
+                   onMouseLeave={handleMouseLeaveNode}
                 >
                 <foreignObject
-                    width={"125"} // 这里的数值都是定义节点name的
-                    height={"100"} // 这里的width和height似乎可以控制pointer出现的范围也就是高亮会出现的范围，但是太小的话name显示不全
+                    width={"125"}
+                    height={"100"}
                     x={nodeDatum.isRoot ? "-145" : "-60"}
                     y={nodeDatum.isRoot ? "-30" : yOffset}
                 >
@@ -140,7 +142,7 @@ function Chat({ onUpload, textContent, setHighlightedText }) {
                         filter: 'drop-shadow(0 4px 6px rgba(0, 0, 0, 0.1))',
                     }}
                 />
-            </g>
+                </g>
             
                 {hasDescription && (
                     <foreignObject width={
@@ -149,8 +151,8 @@ function Chat({ onUpload, textContent, setHighlightedText }) {
                         '100px'}  height={height} x={30} y={nodeDatum.y}>
                         
                         <div style={{
-                            border: '1px solid rgba(204, 204, 204, 0.7)', // 这个是本来在文本后面的框，但是我不知道怎么把框显示在其他节点上
-                            backgroundColor: '#f9f9f9', // 这里的设置都是关于节点的
+                            border: '1px solid rgba(204, 204, 204, 0.7)',
+                            backgroundColor: descriptionBackgroundColor,
                             borderRadius: '4px',
                             boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)',
                             padding: '5px',
@@ -161,9 +163,9 @@ function Chat({ onUpload, textContent, setHighlightedText }) {
                             height: {height},
                         }}>
                             <div style={{ 
-                                fontFamily: 'Arial, sans-serif', // 显示节点description的设置
+                                fontFamily: 'Arial, sans-serif',
                                 fontSize: '12px', 
-                                overflow: isHovered || isExpanded ? 'viusible' : 'hidden', 
+                                overflow: isHovered || isExpanded ? 'visible' : 'hidden', 
                                 textOverflow: 'ellipsis', 
                                 whiteSpace: isHovered || isExpanded ? 'normal' : 'nowrap',
                                 maxWidth: isHovered || isExpanded ? '100%' : '75%',
@@ -193,13 +195,47 @@ function Chat({ onUpload, textContent, setHighlightedText }) {
     };
 
     const handleMouseEnterSentence = (text) => {
-        console.log("Highlighting sentence:", text); // 调试日志
+        console.log("Highlighting sentence:", text);
         setHighlightedText(text);
     };
 
     const handleMouseLeaveSentence = () => {
-        console.log("Removing sentence highlight"); // 调试日志
+        console.log("Removing sentence highlight");
         setHighlightedText(null);
+    };
+
+    const validateDescriptions = useCallback(async (node) => {
+        if (node.children && node.children.length > 0) {
+            for (const child of node.children) {
+                const validation = await validateDescription(child.originalText, child.description);
+                child.isDescriptionValid = validation.isValid;
+                child.validationExplanation = validation.explanation;
+                await validateDescriptions(child);
+            }
+        }
+    }, []);
+
+    const validateDescription = async (originalText, description) => {
+        const prompt = `
+            Please verify if the following description correctly summarizes the original text. 
+            Respond with "yes" if it matches or "no" if it does not. If it does not match, 
+            explain the discrepancy in a brief and clear way.
+    
+            Original Text: ${originalText}
+            Description: ${description}
+        `;
+        const result = await criticModel.generateContent(prompt);
+
+        if (!result || !result.response) {
+            throw new Error('Failed to validate description.');
+        }
+
+        const validationResult = result.response.text().trim().toLowerCase();
+        if (validationResult.includes("no") || validationResult.includes("discrepancy")) {
+            return { isValid: false, explanation: validationResult };
+        } else {
+            return { isValid: true, explanation: "" };
+        }
     };
 
     const summarizeTree = useCallback(async (text) => {
@@ -242,52 +278,19 @@ function Chat({ onUpload, textContent, setHighlightedText }) {
             const cleanedJsonString = result.response.text().replace(/```(?:json)?|```/g, '').trim();
             const cleanedResponse = jsonrepair(cleanedJsonString);
 
-            // Try parsing the cleaned JSON, or throw an error if it's invalid
             const parsedTree = JSON.parse(cleanedResponse);
             
-            // Check if parsedTree has the expected structure with a `children` property
-            if (parsedTree && typeof parsedTree === 'object' && Array.isArray(parsedTree.children)) {
+            if (parsedTree && Array.isArray(parsedTree.children)) {
+                await validateDescriptions(parsedTree);
                 return parsedTree;
             } else {
                 throw new Error('Parsed response is not in the expected format.');
             }
         } catch (error) {
             console.error("Error summarizing the text:", error);
-
-            // Return a fallback structure with a clear indication of the error
-            return {
-                name: "Error",
-                description: "Failed to generate a valid tree structure.",
-                isRoot: true,
-                children: []
-            };
+            return { name: "Error", description: "Failed to generate a valid tree structure.", isRoot: true, children: [] };
         }
-    }, []);
-    
-    useEffect(() => {
-        const summarize = async () => {
-            if (textContent.length > 0 && !summaryGenerated) {
-                const treeSummary = await summarizeTree(textContent);
-                if (treeSummary) {
-                    setTreeData(treeSummary);
-                    setMessages(prevMessages => [
-                        ...prevMessages, { sender: 'chatbot', treeData: treeSummary }
-                    ]);
-                } else {
-                    setMessages(prevMessages => [
-                        ...prevMessages, { sender: 'chatbot', text: "Sorry, there was an error summarizing the document." }
-                    ]);
-                }
-                setSummaryGenerated(true);
-                setShowNotification(true);
-                setTimeout(() => {
-                    setShowNotification(false);
-                }, 3000);
-            }
-        };
-
-        summarize();
-    }, [textContent, summarizeTree, summaryGenerated]);
+    }, [validateDescriptions]);
 
     const chatWithbot = async (question, context) => {
         try {
@@ -323,19 +326,110 @@ function Chat({ onUpload, textContent, setHighlightedText }) {
         }
     };
 
+    const isModificationSuggestion = (inputText) => {
+        const modificationKeywords = ['modify', 'update', 'add', 'delete', 'change', 'adjust'];
+        return modificationKeywords.some(keyword => inputText.toLowerCase().includes(keyword));
+    };
+
+    const generateNewTreeFromSuggestion = async (suggestion, currentTreeData) => {
+        try {
+            const prompt = `
+            Please update the following tree structure based on the user's modification suggestion.
+    
+            User's suggestion: ${suggestion}
+    
+            Current tree structure: ${JSON.stringify(currentTreeData, null, 2)}
+    
+            Instructions:
+    
+            - Apply the user's suggestion to the current tree structure.
+            - Ensure that all nodes not affected by the suggestion remain unchanged.
+            - Return the updated tree structure in JSON format only, enclosed within triple backticks like this:
+    
+            \`\`\`json
+            {
+              "name": "Root",
+              "isRoot": true,
+              "children": [
+                // ... updated child nodes
+              ]
+            }
+            \`\`\`
+    
+            Do not include any additional text or explanations.
+            `;
+    
+            const result = await model.generateContent(prompt);
+    
+            if (!result || !result.response) {
+                throw new Error('Failed to generate new tree structure from suggestion.');
+            }
+    
+            const aiResponse = await result.response.text();
+            console.log("AI Response:", aiResponse);
+    
+            const jsonMatch = aiResponse.match(/```json([\s\S]*?)```/);
+            if (!jsonMatch) {
+                throw new Error('AI response does not contain JSON in the expected format.');
+            }
+    
+            const cleanedJsonString = jsonMatch[1].trim();
+            const cleanedResponse = jsonrepair(cleanedJsonString);
+            const parsedTree = JSON.parse(cleanedResponse);
+    
+            if (parsedTree) {
+                await validateDescriptions(parsedTree);
+                return parsedTree;
+            } else {
+                throw new Error('Generated tree structure is not in the correct format.');
+            }
+        } catch (error) {
+            console.error("Error generating tree from modification suggestion:", error);
+            return null;
+        }
+    };
+    
+
+
     const sendMessage = async () => {
         if (input.trim()) {
             setMessages([...messages, { sender: 'user', text: input }]);
             setInput('');
-
-            if (summaryGenerated) {
+    
+            if (isModificationSuggestion(input)) {
+                if (treeData) {
+                    const newTreeData = await generateNewTreeFromSuggestion(input, treeData);
+                    if (newTreeData) {
+                        setTreeData(newTreeData);
+                        setMessages(prevMessages => [
+                            ...prevMessages,
+                            { sender: 'chatbot', text: "The tree has been updated based on your suggestion." }
+                        ]);
+                    } else {
+                        setMessages(prevMessages => [
+                            ...prevMessages,
+                            { sender: 'chatbot', text: "Sorry, couldn't update the tree based on your suggestion." }
+                        ]);
+                    }
+                } else {
+                    setMessages(prevMessages => [
+                        ...prevMessages,
+                        { sender: 'chatbot', text: "The tree is not ready yet. Please wait for the summary to be generated." }
+                    ]);
+                }
+            } else if (summaryGenerated && textContent.length > 0) {
                 const botReply = await chatWithbot(input, textContent);
                 setMessages(prevMessages => [...prevMessages, { sender: 'chatbot', text: botReply }]);
             } else {
-                setMessages(prevMessages => [...prevMessages, { sender: 'chatbot', text: "Please upload a document first to generate a summary." }]);
+                setMessages(prevMessages => [
+                    ...prevMessages,
+                    { sender: 'chatbot', text: "Please upload a document first to generate a summary." }
+                ]);
             }
         }
     };
+    
+
 
     const toggleSentenceSelection = (sentence) => {
         setSelectedSentence(selectedSentence === sentence ? null : sentence);
@@ -345,6 +439,31 @@ function Chat({ onUpload, textContent, setHighlightedText }) {
     const splitIntoSentences = (text) => {
         return text.split(/(?<=[.!?])\s+(?=[^a-zA-Z\dIVXLCDM\s])/);
     };
+
+    useEffect(() => {
+        const summarize = async () => {
+            if (textContent.length > 0 && !summaryGenerated) {
+                const treeSummary = await summarizeTree(textContent);
+                if (treeSummary) {
+                    setTreeData(treeSummary);
+                    setMessages(prevMessages => [
+                        ...prevMessages, { sender: 'chatbot', treeData: treeSummary }
+                    ]);
+                } else {
+                    setMessages(prevMessages => [
+                        ...prevMessages, { sender: 'chatbot', text: "Sorry, there was an error summarizing the document." }
+                    ]);
+                }
+                setSummaryGenerated(true);
+                setShowNotification(true);
+                setTimeout(() => {
+                    setShowNotification(false);
+                }, 3000);
+            }
+        };
+
+        summarize();
+    }, [textContent, summarizeTree, summaryGenerated]);
 
     const [dimensions, translate, containerRef] = useCenteredTree();
 
@@ -379,7 +498,7 @@ function Chat({ onUpload, textContent, setHighlightedText }) {
                                         boxShadow: '0 4px 8px rgba(0,0,0,0.1)',
                                     }}
                                 >
-                                     <Tree
+                                    <Tree
                                         initialDepth={2}
                                         data={treeData}
                                         svgProps={{
@@ -390,10 +509,10 @@ function Chat({ onUpload, textContent, setHighlightedText }) {
                                         renderCustomNodeElement={(rd3tProps) => (
                                             renderRectSvgNode(rd3tProps)
                                         )}
-                                        dimensions={dimensions} // 这两个都是为了自动居中的
+                                        dimensions={dimensions}
                                         translate={translate}
                                         orientation="horizontal"
-                                        pathFunc={"step"} // 节点之间线的样式，这个遮挡少一点
+                                        pathFunc={"step"}
                                         depthFactor={300}
                                     />
                                 </div>
@@ -417,26 +536,26 @@ function Chat({ onUpload, textContent, setHighlightedText }) {
                 <div ref={messageEndRef} />
             </div>
             {isTreeVisible && treeData && (
-            <div className="floating-tree" ref={containerRef} style={{ padding: '0px', background: '#f9f9f9', borderRadius: '8px', boxShadow: '0 4px 8px rgba(0,0,0,0.1)' }}>
-            <Tree
-                initialDepth={2} // 初始显示的层级，这一块都是点击icon显示的树图的部分
-                data={treeData}
-                svgProps={{
-                    className: 'tree-svg',
-                    style: { background: 'white', borderRadius: '0px' },
-                }}
-                animated={true}
-                renderCustomNodeElement={(rd3tProps) => (
-                    renderRectSvgNode(rd3tProps)
-                )}
-                dimensions={dimensions}
-                translate={translate}
-                orientation="horizontal"
-                pathFunc={"step"}
-                depthFactor={300}
-            />
-        </div>
-        )}
+                <div className="floating-tree" ref={containerRef} style={{ padding: '0px', background: '#f9f9f9', borderRadius: '8px', boxShadow: '0 4px 8px rgba(0,0,0,0.1)' }}>
+                    <Tree
+                        initialDepth={2}
+                        data={treeData}
+                        svgProps={{
+                            className: 'tree-svg',
+                            style: { background: 'white', borderRadius: '0px' },
+                        }}
+                        animated={true}
+                        renderCustomNodeElement={(rd3tProps) => (
+                            renderRectSvgNode(rd3tProps)
+                        )}
+                        dimensions={dimensions}
+                        translate={translate}
+                        orientation="horizontal"
+                        pathFunc={"step"}
+                        depthFactor={300}
+                    />
+                </div>
+            )}
             <div className="input-container">
                 <input
                     type="file"
