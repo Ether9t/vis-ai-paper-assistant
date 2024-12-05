@@ -332,6 +332,9 @@ function Chat({ onUpload, textContent, setHighlightedText }) {
     };
 
     const generateNewTreeFromSuggestion = async (suggestion, currentTreeData) => {
+        if (!currentTreeData) {
+            throw new Error('Current tree data is not available.');
+        }
         try {
             const prompt = `
             Please update the following tree structure based on the user's modification suggestion.
@@ -400,15 +403,14 @@ function Chat({ onUpload, textContent, setHighlightedText }) {
                 if (treeData) {
                     const newTreeData = await generateNewTreeFromSuggestion(input, treeData);
                     if (newTreeData) {
-                        setTreeData(newTreeData);
                         setMessages(prevMessages => [
                             ...prevMessages,
-                            { sender: 'chatbot', text: "The tree has been updated based on your suggestion." }
+                            { sender: 'chatbot', treeData: newTreeData }
                         ]);
                     } else {
                         setMessages(prevMessages => [
                             ...prevMessages,
-                            { sender: 'chatbot', text: "Sorry, couldn't update the tree based on your suggestion." }
+                            { sender: 'chatbot', text: "Sorry, it is not possible to generate a new tree map based on your suggestion." }
                         ]);
                     }
                 } else {
