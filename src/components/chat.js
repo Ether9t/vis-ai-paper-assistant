@@ -337,31 +337,37 @@ function Chat({ onUpload, textContent, setHighlightedText }) {
         }
         try {
             const prompt = `
-            Please update the following tree structure based on the user's modification suggestion.
-    
-            User's suggestion: ${suggestion}
-    
-            Current tree structure: ${JSON.stringify(currentTreeData, null, 2)}
-    
-            Instructions:
-    
-            - Apply the user's suggestion to the current tree structure.
-            - Ensure that all nodes not affected by the suggestion remain unchanged.
-            - Return the updated tree structure in JSON format only, enclosed within triple backticks like this:
-    
-            \`\`\`json
-            {
-              "name": "Root",
-              "isRoot": true,
-              "children": [
-                // ... updated child nodes
-              ]
-            }
-            \`\`\`
-    
-            Do not include any additional text or explanations.
-            `;
-    
+        Please update the following tree structure based on the user's modification suggestion.
+        
+        User's suggestion: ${suggestion}
+        
+        Current tree structure: ${JSON.stringify(currentTreeData, null, 2)}
+        
+        Instructions:
+        Important: Identify the node specified in the user's suggestion.
+
+        1. Analyze the user's suggestion to determine the specific modification (e.g., add, delete, rename).
+        2. Locate the target node(s) in the current tree structure based on the suggestion.
+        3. Apply the modification:
+        - **Add:** Insert a new node at the specified location.
+        - **Delete:** Remove the specified node and its subtree.
+        - **Rename/Change:** Update the node's name as per the suggestion.
+        4. Ensure that all other nodes and the overall structure remain unchanged.
+        5. Return the updated tree structure in JSON format only, enclosed within triple backticks and specifying the language as JSON:
+        
+        \`\`\`json
+        {
+        "name": "Root",
+        "isRoot": true,
+        "children": [
+            // ... updated child nodes
+        ]
+        }
+        \`\`\`
+        
+        Do not include any additional text or explanations.
+        `;
+        
             const result = await model.generateContent(prompt);
     
             if (!result || !result.response) {
@@ -369,7 +375,7 @@ function Chat({ onUpload, textContent, setHighlightedText }) {
             }
     
             const aiResponse = await result.response.text();
-            console.log("AI Response:", aiResponse);
+            console.log("AI TreeData", aiResponse);
     
             const jsonMatch = aiResponse.match(/```json([\s\S]*?)```/);
             if (!jsonMatch) {
@@ -392,6 +398,7 @@ function Chat({ onUpload, textContent, setHighlightedText }) {
         }
     };
     
+    
 
 
     const sendMessage = async () => {
@@ -401,8 +408,11 @@ function Chat({ onUpload, textContent, setHighlightedText }) {
     
             if (isModificationSuggestion(input)) {
                 if (treeData) {
+                    console.log("treeData: ", treeData)
                     const newTreeData = await generateNewTreeFromSuggestion(input, treeData);
                     if (newTreeData) {
+                        console.log("newtreeData: ", treeData)
+                        setTreeData(newTreeData); 
                         setMessages(prevMessages => [
                             ...prevMessages,
                             { sender: 'chatbot', treeData: newTreeData }
