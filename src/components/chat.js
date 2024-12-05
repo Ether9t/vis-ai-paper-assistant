@@ -62,7 +62,7 @@ function Chat({ onUpload, textContent, setHighlightedText }) {
         const height = descriptionHeight;
         const textLength = nodeDatum.name.length;
         const isDescriptionInvalid = !nodeDatum.isDescriptionValid;
-        const descriptionBackgroundColor = isDescriptionInvalid ? '#ffcccc' : '#f9f9f9';
+        const descriptionBackgroundColor = isDescriptionInvalid ? '#ffcccc' : '#f9f9f9'; // 假如summary是合理的/不合理的颜色
         let yOffset;
         if (textLength <= 15) {
             yOffset = "-35";
