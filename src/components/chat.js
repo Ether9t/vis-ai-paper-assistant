@@ -7,7 +7,7 @@ import { useCenteredTree } from "./helpers.js";
 import ReactMarkdown from 'react-markdown';
 
 const { GoogleGenerativeAI } = require("@google/generative-ai");
-const genAI = new GoogleGenerativeAI('YOUR_KEY');
+const genAI = new GoogleGenerativeAI('AIzaSyCj6783aYaHpyFHvBQAOJFRN0LRkA7dhvM');
 const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" }); // 创建树图的model
 const criticModel = genAI.getGenerativeModel({ model: "gemini-1.5-flash" }); //对树图中summary进行检查的model
 
@@ -62,7 +62,7 @@ function Chat({ onUpload, textContent, setHighlightedText }) {
         const height = descriptionHeight;
         const textLength = nodeDatum.name.length;
         const isDescriptionInvalid = !nodeDatum.isDescriptionValid;
-        const descriptionBackgroundColor = isDescriptionInvalid ? '#ffcccc' : '#f9f9f9'; // 假如summary是合理的/不合理的颜色
+        const descriptionBackgroundColor = isDescriptionInvalid ? '#ffcccc' : '#f9f9f9';
         let yOffset;
         if (textLength <= 15) {
             yOffset = "-35";

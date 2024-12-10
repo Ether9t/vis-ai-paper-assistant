@@ -23,47 +23,53 @@ const Viewer = ({ file, setTextContent, highlightedText }) => {
 
   const loadTextContent = useCallback(async () => {
     if (file) {
-      const extractedTextItems = [];
-      const seenStrings = new Set();
-      const pdf = await pdfjs.getDocument(file).promise;
-      const numPages = pdf.numPages;
-      const pageCounts = [];
-  
-      let globalIndex = 0; // 初始化全局索引
-  
-      for (let pageNumber = 1; pageNumber <= numPages; pageNumber++) {
-        const page = await pdf.getPage(pageNumber);
-        const textContent = await page.getTextContent();
-        const pageTextItems = textContent.items.map((item) => ({
-          str: item.str,
-          transform: item.transform,
-          width: item.width,
-          height: item.height,
-          dir: item.dir,
-          fontName: item.fontName,
-          pageNumber: pageNumber,
-          itemIndex: globalIndex++, // 正确赋值全局索引
-        })).filter(item => {
-          const normalizedStr = item.str.trim().toLowerCase();
-          if (seenStrings.has(normalizedStr)) {
-            return false;
-          }
-          seenStrings.add(normalizedStr);
-          return true;
-        });
-  
-        extractedTextItems.push(...pageTextItems);
-        pageCounts.push(pageTextItems.length);
+      try {
+        const extractedTextItems = [];
+        const seenStrings = new Set();
+        const pdf = await pdfjs.getDocument(file).promise;
+        const totalNumPages = pdf.numPages;
+        const pageCounts = [];
+
+        let globalIndex = 0;
+
+        for (let pageNumber = 1; pageNumber <= totalNumPages; pageNumber++) {
+          const page = await pdf.getPage(pageNumber);
+          const textContent = await page.getTextContent();
+          const pageTextItems = textContent.items
+            .map((item) => ({
+              str: item.str,
+              transform: item.transform,
+              width: item.width,
+              height: item.height,
+              dir: item.dir,
+              fontName: item.fontName,
+              pageNumber: pageNumber,
+              itemIndex: globalIndex++,
+            }))
+            .filter((item) => {
+              const normalizedStr = item.str.trim().toLowerCase();
+              if (seenStrings.has(normalizedStr)) {
+                return false;
+              }
+              seenStrings.add(normalizedStr);
+              return true;
+            });
+
+          extractedTextItems.push(...pageTextItems);
+          pageCounts.push(pageTextItems.length);
+        }
+
+        setTextItems(extractedTextItems);
+        setPageItemCounts(pageCounts);
+
+        const fullText = extractedTextItems.map((item) => item.str).join(' ');
+        setTextContent(fullText);
+      } catch (err) {
+        console.error('Error loading text content:', err);
       }
-  
-      setTextItems(extractedTextItems);
-      setPageItemCounts(pageCounts);
-  
-      const fullText = extractedTextItems.map(item => item.str).join(' ');
-      setTextContent(fullText);
     }
-  }, [file, setTextContent]);  
-  
+  }, [file, setTextContent]);
+
   useEffect(() => {
     if (file) {
       loadTextContent();
@@ -72,7 +78,6 @@ const Viewer = ({ file, setTextContent, highlightedText }) => {
 
   // 当 highlightedText 或 textItems 变化时，查找需要高亮的文本项
   useEffect(() => {
-    console.log("Highlighted Text:", highlightedText); // 调试日志
     if (highlightedText && textItems.length > 0) {
       const highlights = findHighlights(textItems, highlightedText);
       console.log("Highlights found:", highlights); // 调试日志
@@ -131,37 +136,30 @@ const Viewer = ({ file, setTextContent, highlightedText }) => {
     // console.log(itemIndex,"==getGlobalItemIndex==",pageItem);
     // console.log( pageItem?.itemIndex);
     return pageItem?.itemIndex;
-
-    // let index = 0;
-    // for (let i = 0; i < pageNumber - 1; i++) {
-    //   index += pageItemCounts[i] || 0;
-    // }
-    // index += itemIndex;
-    // return index;
   };
 
   const onDocumentLoadSuccess = ({ numPages }) => {
     setNumPages(numPages);
     setError(null);
     setCurrentPage(1);
+    setPageInputValue('1');
   };
 
   const onDocumentLoadError = (err) => {
     setError('Failed to load PDF file.');
   };
 
-  useEffect(() => {
-    if (currentPage > 1 && currentPage <= numPages) {
-      console.log(`Now on page ${currentPage}`);
-    }
-  }, [currentPage, numPages]);
-
+  // 缩放控制
   const handleZoomIn = () => {
     setScale((prevScale) => Math.min(prevScale + 0.2, 3));
   };
-  
+
   const handleZoomOut = () => {
     setScale((prevScale) => Math.max(prevScale - 0.2, 0.5));
+  };
+
+  const handlePageInputChange = (e) => {
+    setPageInputValue(e.target.value);
   };
 
   const handlePageInputKeyDown = (e) => {
@@ -176,13 +174,13 @@ const Viewer = ({ file, setTextContent, highlightedText }) => {
 
   const updateCurrentPage = () => {
     const pageNumber = parseInt(pageInputValue, 10);
-    if (!isNaN(pageNumber)) {
-      const validPageNumber = Math.min(Math.max(pageNumber, 1), numPages);
-      setCurrentPage(validPageNumber);
-      const pageElement = pageRefs.current[validPageNumber - 1];
+    if (!isNaN(pageNumber) && pageNumber >= 1 && pageNumber <= numPages) {
+      setCurrentPage(pageNumber);
+      const pageElement = pageRefs.current[pageNumber - 1];
       if (pageElement) {
         pageElement.scrollIntoView({ behavior: 'smooth' });
       }
+      setPageInputValue(pageNumber.toString());
     } else {
       setPageInputValue(currentPage.toString());
     }
@@ -216,57 +214,73 @@ const Viewer = ({ file, setTextContent, highlightedText }) => {
     if (!highlightedText || highlights.length === 0) {
       return str;
     }
-    const globalItemIndex = getGlobalItemIndex(pageNumber, itemIndex,str);
-    let newStr = str
-    // console.log(highlights);
-    
-    // console.log('aaaaaa=',newStr, globalItemIndex, pageNumber,itemIndex,pageItemCounts);
-    const filterList = highlights.find((highlight) => highlight.index === globalItemIndex && highlight.pageNumber === pageNumber);
-    if (filterList) {
-      // console.log('filterList=', filterList);
-      // const highlight = filterList[0];
-      // highlight.strItem.split(' ').forEach((aaa, index) => {
-      //   newStr = newStr.replace(aaa, (value) => `<mark>${value}</mark>`)
-      // });
-      // console.log('update custom=', globalItemIndex, pageNumber);
-      // console.log('newStr=', newStr);
-      newStr = `<mark>${newStr}</mark>`
+    const globalItemIndex = getGlobalItemIndex(pageNumber, itemIndex, str);
+    const isHighlighted = highlights.some(
+      (highlight) =>
+        highlight.index === globalItemIndex &&
+        highlight.pageNumber === pageNumber
+    );
+
+    if (isHighlighted) {
+      return `<mark>${str}</mark>`;
     }
-    return newStr
-    
+    return str;
+  };
 
-    // highlights.forEach((highlight) => {
-    //   if (highlight.index === globalItemIndex && highlight.pageNumber === pageNumber) {
 
-    //     highlight.strItem.split(' ').forEach((aaa, index) => {
-    //       newStr = newStr.replace(aaa, (value) => `<mark  style={{ backgroundColor: 'blue', fontWeight: 'bold' }}>${value}</mark>`)
-    //     });
+  useEffect(() => {
+    if (!numPages) return;
 
-    //     console.log('update custom=', globalItemIndex, pageNumber);
-    //     console.log('newStr=', newStr);
-        
-    //   }
-    // })
-    // return newStr
-  }
+    const options = {
+      root: null,
+      rootMargin: '0px',
+      threshold: 0.6, 
+    };
+
+    const callback = (entries) => {
+      entries.forEach((entry) => {
+        if (entry.isIntersecting) {
+          const pageNumber = parseInt(entry.target.getAttribute('data-page-number'), 10);
+          setCurrentPage(pageNumber);
+          setPageInputValue(pageNumber.toString());
+        }
+      });
+    };
+
+    const observer = new IntersectionObserver(callback, options);
+
+    pageRefs.current.forEach((page) => {
+      if (page) observer.observe(page);
+    });
+
+    return () => {
+      if (observer) {
+        observer.disconnect();
+      }
+    };
+  }, [numPages]);
 
   return (
     <div className="pdf-viewer-container">
       {file && (
         <div className="controls fixed-controls">
-          <input
-            type="number"
-            value={pageInputValue}
-            onChange={(e) => setPageInputValue(e.target.value)}
-            onKeyDown={handlePageInputKeyDown}
-            onBlur={handlePageInputBlur}
-            min="1"
-            max={numPages}
-          />
-          <span>/ {numPages}</span>
-          <span className="light-text">&nbsp;|&nbsp;</span>
-          <button onClick={handleZoomOut}>-</button>
-          <button onClick={handleZoomIn}>+</button>
+          <div className="page-navigation">
+            <input
+              type="number"
+              value={pageInputValue}
+              onChange={handlePageInputChange}
+              onKeyDown={handlePageInputKeyDown}
+              onBlur={handlePageInputBlur}
+              min="1"
+              max={numPages}
+              className="page-input"
+            />
+            <span className="page-count"> / {numPages}</span>
+          </div>
+          <div className="zoom-controls">
+            <button onClick={handleZoomOut} className="zoom-button">-</button>
+            <button onClick={handleZoomIn} className="zoom-button">+</button>
+          </div>
         </div>
       )}
 
@@ -276,8 +290,10 @@ const Viewer = ({ file, setTextContent, highlightedText }) => {
             file={file}
             onLoadSuccess={onDocumentLoadSuccess}
             onLoadError={onDocumentLoadError}
+            loading={<div className="loading">Loading PDF...</div>}
+            error={<div className="error">Failed to load PDF.</div>}
           >
-            {Array.from({ length: numPages }, (v, i) => {
+            {Array.from({ length: numPages }, (_, i) => {
               const pageNumber = i + 1;
               return (
                 <div
@@ -290,26 +306,9 @@ const Viewer = ({ file, setTextContent, highlightedText }) => {
                     pageNumber={pageNumber}
                     scale={scale}
                     customTextRenderer={myCustomTextRender}
-                  // customTextRenderer={({ str, itemIndex }) => {
-                  //     const globalItemIndex = getGlobalItemIndex(pageNumber, itemIndex);
-                  //     const isHighlighted = highlights.some(
-                  //         (highlight) =>
-                  //             highlight.index === globalItemIndex &&
-                  //             highlight.pageNumber === pageNumber
-                  //     );
-                  //     return (
-                  //       `<span
-                  //       style={{
-                  //           backgroundColor: ${isHighlighted? 'yellow' : 'transparent'} ,
-                  //       }}
-                  //       className={${isHighlighted? 'highlighted-text' : ''} }
-                  //   >
-                  //       ${str}
-                  //   </span>`
-                  //     );
-                  // }}
+                    renderTextLayer={true}
+                    renderAnnotationLayer={true}
                   />
-
                 </div>
               );
             })}
@@ -318,7 +317,7 @@ const Viewer = ({ file, setTextContent, highlightedText }) => {
           <p className="no-pdf-message">No PDF file uploaded</p>
         )}
       </div>
-      {error && <p>{error}</p>}
+      {error && <p className="error-message">{error}</p>}
     </div>
   );
 };
