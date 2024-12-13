@@ -22,6 +22,7 @@ function Chat({ onUpload, textContent, setHighlightedText }) {
     const [showNotification, setShowNotification] = useState(false);
     const responseSummary = 'You can click the icon to re-check the tree chart. Feel free to ask me questions!';
     const [allTrees, setAllTrees] = useState([]);
+    const [showExplanationModal, setShowExplanationModal] = useState(false);
 
     useEffect(() => {
         if (messageEndRef.current) {
@@ -517,7 +518,37 @@ function Chat({ onUpload, textContent, setHighlightedText }) {
                         <option key={index} value={index}>Version {index + 1}</option>
                     ))}
                     </select>
+                    <button
+                        className="explanation-button"
+                        onClick={() => setShowExplanationModal(true)}
+                    >
+                        How to Suggest Changes
+                    </button>
+                    {/* Explanation Modal */}
+                    {showExplanationModal && (
+                        <div className="modal-overlay">
+                            <div className="modal">
+                                <h3>How to Suggest Changes</h3>
+                                <p>
+                                    Use specific keywords to suggest tree changes:
+                                </p>
+                                <ul>
+                                    <li><strong>Modify</strong>: Change a node's name or structure.</li>
+                                    <li><strong>Add</strong>: Add a new node or branch.</li>
+                                    <li><strong>Delete</strong>: Remove a node or branch.</li>
+                                </ul>
+                                <p>Example: "Change the summary of node 'Name of the node'."</p>
+                                <button
+                                    className="modal-close-button"
+                                    onClick={() => setShowExplanationModal(false)}
+                                >
+                                    Close
+                                </button>
+                            </div>
+                        </div>
+                    )}
                 </div>
+                
             )}
 
             <div className="message-display">

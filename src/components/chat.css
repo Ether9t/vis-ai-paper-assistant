@@ -213,3 +213,80 @@ box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
 .tree-history-select:hover {
   border-color: #736666;
 }
+/* Modal Overlay */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+/* Modal Container */
+.modal {
+  background: white;
+  border-radius: 8px;
+  padding: 20px;
+  width: 400px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+  text-align: center;
+}
+
+/* Modal Header */
+.modal h3 {
+  margin-bottom: 15px;
+  font-size: 18px;
+  color: #333;
+}
+
+/* Modal Content */
+.modal p, .modal ul {
+  font-size: 14px;
+  color: #555;
+  margin: 10px 0;
+  line-height: 1.5;
+}
+
+.modal ul {
+  list-style-type: disc;
+  text-align: left;
+  padding-left: 20px;
+}
+
+/* Close Button */
+.modal-close-button {
+  margin-top: 20px;
+  padding: 10px 15px;
+  border: none;
+  border-radius: 4px;
+  background-color: #bebebe;
+  color: black;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+.modal-close-button:hover {
+  background-color: #00b7ff;
+  color: white;
+}
+
+/* Explanation Button */
+.explanation-button {
+  margin-left: 15px;
+  padding: 8px 12px;
+  border: none;
+  border-radius: 4px;
+  background-color: #00b7ff;
+  color: white;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+.explanation-button:hover {
+  background-color: #007acc;
+}
