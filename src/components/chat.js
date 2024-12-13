@@ -462,10 +462,6 @@ function Chat({ onUpload, textContent, setHighlightedText }) {
     
 
 
-    const toggleSentenceSelection = (sentence) => {
-        setSelectedSentence(selectedSentence === sentence ? null : sentence);
-        setHighlightedText(selectedSentence === sentence ? null : sentence);
-    };
 
     const splitIntoSentences = (text) => {
         return text.split(/(?<=[.!?])\s+(?=[^a-zA-Z\dIVXLCDM\s])/);
@@ -565,9 +561,6 @@ function Chat({ onUpload, textContent, setHighlightedText }) {
                             msg.sender === 'chatbot' && splitIntoSentences(msg.text).map((sentence, i) => (
                                 <div
                                     key={`${msgIndex}-${i}`}
-                                    onMouseEnter={() => handleMouseEnterSentence(sentence)}
-                                    onMouseLeave={handleMouseLeaveSentence}
-                                    onClick={() => toggleSentenceSelection(sentence)}
                                     className={`summary-sentence ${selectedSentence === sentence ? 'selected' : ''}`}
                                 >
                                     <ReactMarkdown>{sentence + ''}</ReactMarkdown>
