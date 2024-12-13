@@ -107,14 +107,7 @@ input[type="text"] {
   cursor: pointer;
 }
 
-.summary-sentence:hover {
-  background-color: #00b7ff97;
-}
 
-.summary-sentence.selected {
-background-color: #00b7ff97;
-cursor: pointer;
-}
 
 .tree-toggle-icon {
 position: fixed;

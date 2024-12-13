@@ -21,6 +21,7 @@ function Chat({ onUpload, textContent, setHighlightedText }) {
     const [isTreeVisible, setIsTreeVisible] = useState(false);
     const [showNotification, setShowNotification] = useState(false);
     const responseSummary = 'You can click the icon to re-check the tree chart. Feel free to ask me questions!';
+    const [allTrees, setAllTrees] = useState([]);
 
     useEffect(() => {
         if (messageEndRef.current) {

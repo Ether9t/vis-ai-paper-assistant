@@ -87,3 +87,7 @@ mark {
   margin-top: 60px;
   padding-left: 15px;
 }
+.pdf-viewer ::selection {
+  background: transparent;
+  color: inherit;
+}
