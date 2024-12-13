@@ -29,9 +29,9 @@ const Viewer = ({ file, setTextContent, highlightedText }) => {
         const pdf = await pdfjs.getDocument(file).promise;
         const totalNumPages = pdf.numPages;
         const pageCounts = [];
-
+  
         let globalIndex = 0;
-
+  
         for (let pageNumber = 1; pageNumber <= totalNumPages; pageNumber++) {
           const page = await pdf.getPage(pageNumber);
           const textContent = await page.getTextContent();
@@ -54,21 +54,23 @@ const Viewer = ({ file, setTextContent, highlightedText }) => {
               seenStrings.add(normalizedStr);
               return true;
             });
-
+  
           extractedTextItems.push(...pageTextItems);
           pageCounts.push(pageTextItems.length);
         }
-
+  
         setTextItems(extractedTextItems);
         setPageItemCounts(pageCounts);
-
+  
         const fullText = extractedTextItems.map((item) => item.str).join(' ');
         setTextContent(fullText);
+        setCurrentPage(1);
+        setPageInputValue('1');
       } catch (err) {
         console.error('Error loading text content:', err);
       }
     }
-  }, [file, setTextContent]);
+  }, [file, setTextContent]);  
 
   useEffect(() => {
     if (file) {
