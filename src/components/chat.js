@@ -409,11 +409,10 @@ function Chat({ onUpload, textContent, setHighlightedText }) {
     
             if (isModificationSuggestion(input)) {
                 if (treeData) {
-                    console.log("treeData: ", treeData)
                     const newTreeData = await generateNewTreeFromSuggestion(input, treeData);
                     if (newTreeData) {
-                        console.log("newtreeData: ", treeData)
                         setTreeData(newTreeData); 
+                        setAllTrees(prevAllTrees => [...prevAllTrees, newTreeData]); 
                         setMessages(prevMessages => [
                             ...prevMessages,
                             { sender: 'chatbot', treeData: newTreeData }
@@ -462,6 +461,7 @@ function Chat({ onUpload, textContent, setHighlightedText }) {
                     setMessages(prevMessages => [
                         ...prevMessages, { sender: 'chatbot', treeData: treeSummary }
                     ]);
+                    setAllTrees(prevAllTrees => [...prevAllTrees, treeSummary]);
                 } else {
                     setMessages(prevMessages => [
                         ...prevMessages, { sender: 'chatbot', text: "Sorry, there was an error summarizing the document." }
@@ -482,16 +482,28 @@ function Chat({ onUpload, textContent, setHighlightedText }) {
 
     return (
         <div className="chat-container">
-            <div className="tree-toggle-icon" onClick={toggleTreeVisibility}>
-                <span className="material-icons">
-                    {isTreeVisible ? 'close' : 'account_tree'}
-                </span>
-            </div> 
+            
             {showNotification && (
                 <div className="notification">
                     {responseSummary}
                 </div>
             )} 
+            {allTrees.length > 0 && (
+                <div className="tree-history-wrapper">
+                    <label className="tree-history-label">Tree History:</label>
+                    <select 
+                    className="tree-history-select"
+                    onChange={(e) => {
+                        const index = e.target.value;
+                        setTreeData(allTrees[index]);
+                    }}
+                    >
+                    {allTrees.map((tree, index) => (
+                        <option key={index} value={index}>Version {index + 1}</option>
+                    ))}
+                    </select>
+                </div>
+            )}
 
             <div className="message-display">
                 {messages.map((msg, msgIndex) => (

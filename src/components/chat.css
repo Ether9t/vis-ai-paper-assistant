@@ -182,3 +182,34 @@ box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
       opacity: 0;
   }
 }
+.tree-history-wrapper {
+  display: flex;
+  align-items: center;
+  background-color: #e8e7e7;
+  margin-bottom: 1px;
+  height: 102px;
+  padding: 4px 0;
+}
+
+.tree-history-label {
+  margin-right: 8px;
+  font-family: "Arial, sans-serif";
+  font-weight: 600;
+  font-size: 14px;
+  color: #333;
+}
+
+.tree-history-select {
+  padding: 4px 8px;
+  border-radius: 4px;
+  background-color: #fff;
+  border: 1px solid #ccc;
+  font-size: 14px;
+  font-family: "Arial, sans-serif";
+  cursor: pointer;
+  transition: border-color 0.2s ease;
+}
+
+.tree-history-select:hover {
+  border-color: #736666;
+}
