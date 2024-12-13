@@ -411,12 +411,31 @@ function Chat({ onUpload, textContent, setHighlightedText }) {
                 if (treeData) {
                     const newTreeData = await generateNewTreeFromSuggestion(input, treeData);
                     if (newTreeData) {
-                        setTreeData(newTreeData); 
-                        setAllTrees(prevAllTrees => [...prevAllTrees, newTreeData]); 
+                        // 更新treeData状态
+                        setTreeData(newTreeData);
+            
+                        // 将所有旧版本树图消息替换为 "Please check the new version"
+                        setMessages(prevMessages => {
+                            return prevMessages.map(msg => {
+                                if (msg.sender === 'chatbot' && msg.treeData) {
+                                    return {
+                                        ...msg,
+                                        treeData: null, 
+                                        text: "Please check the new version"
+                                    };
+                                }
+                                return msg;
+                            });
+                        });
+            
+                        // 将新生成的树图作为最新消息插入
                         setMessages(prevMessages => [
                             ...prevMessages,
                             { sender: 'chatbot', treeData: newTreeData }
                         ]);
+            
+                        // 同步将新树图存入历史版本
+                        setAllTrees(prevAllTrees => [...prevAllTrees, newTreeData]);
                     } else {
                         setMessages(prevMessages => [
                             ...prevMessages,
