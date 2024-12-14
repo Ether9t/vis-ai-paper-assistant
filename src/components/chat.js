@@ -23,6 +23,7 @@ function Chat({ onUpload, textContent, setHighlightedText }) {
     const responseSummary = 'You can click the icon to re-check the tree chart. Feel free to ask me questions!';
     const [allTrees, setAllTrees] = useState([]);
     const [showExplanationModal, setShowExplanationModal] = useState(false);
+    const [selectedVersionIndex, setSelectedVersionIndex] = useState(0);
 
     useEffect(() => {
         if (messageEndRef.current) {
@@ -436,7 +437,12 @@ function Chat({ onUpload, textContent, setHighlightedText }) {
                         ]);
             
                         // 同步将新树图存入历史版本
-                        setAllTrees(prevAllTrees => [...prevAllTrees, newTreeData]);
+                        setAllTrees(prevAllTrees => {
+                            const updated = [...prevAllTrees, newTreeData];
+                            // 更新选中版本为最新的版本下标
+                            setSelectedVersionIndex(updated.length - 1);
+                            return updated;
+                        });
                     } else {
                         setMessages(prevMessages => [
                             ...prevMessages,
@@ -508,11 +514,13 @@ function Chat({ onUpload, textContent, setHighlightedText }) {
                 <div className="tree-history-wrapper">
                     <label className="tree-history-label">Tree History:</label>
                     <select 
-                    className="tree-history-select"
-                    onChange={(e) => {
-                        const index = e.target.value;
-                        setTreeData(allTrees[index]);
-                    }}
+                        className="tree-history-select"
+                        value={selectedVersionIndex} 
+                        onChange={(e) => {
+                            const index = parseInt(e.target.value, 10);
+                            setSelectedVersionIndex(index);
+                            setTreeData(allTrees[index]);
+                        }}
                     >
                     {allTrees.map((tree, index) => (
                         <option key={index} value={index}>Version {index + 1}</option>
