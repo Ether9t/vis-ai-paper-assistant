@@ -1,15 +1,9 @@
-重新上传了喵
+﻿# paper-assistant
 
-运行以下命令
+ please change the KEY in chat.js to use the API.
 
-npm install
+ #### `src/components/`
 
-npm start
-
-运行以下命令上传更新喵
-
-git add .
-
-git commit -m "更新的内容"
-
-git push -u vis-ai-paper-assistant main --force
+ 1. **`chat.js`**: You should change the KEY in this file before running
+ 2. **`viewer.js`**: PFD viewer
+ 
