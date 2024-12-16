@@ -1,6 +1,6 @@
 ﻿# paper-assistant
 
- please change the KEY in chat.js to use the API.
+ Please change the **KEY** in chat.js to use the Gemini 1.5 Flash API.
 
  #### `src/components/`
 
