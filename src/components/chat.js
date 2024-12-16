@@ -20,7 +20,7 @@ function Chat({ onUpload, textContent, setHighlightedText }) {
     const [treeData, setTreeData] = useState(null);
     const [isTreeVisible, setIsTreeVisible] = useState(false);
     const [showNotification, setShowNotification] = useState(false);
-    const responseSummary = 'You can click the icon to re-check the tree chart. Feel free to ask me questions!';
+    const responseSummary = 'You can now check the tree chart. Feel free to ask me questions!';
     const [allTrees, setAllTrees] = useState([]);
     const [showExplanationModal, setShowExplanationModal] = useState(false);
     const [selectedVersionIndex, setSelectedVersionIndex] = useState(0);
